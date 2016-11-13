@@ -11,8 +11,10 @@
 
 #define BLACK 0x0
 #define WHITE 0xffffff
-#define BRIGHT_BLUE 0xf0
+#define BLUE 0xf0
+#define GREEN 0x42f450
 #define RED 0xff3300
+#define YELLOW 0xffd400
 
 #define LIFE_BAR_HEIGHT 75
 #define LIFE_BAR_MAX_WIDTH 400
@@ -21,6 +23,9 @@
 #define LIFE_BAR_Y_POS 50
 
 #define ARROW_HEIGHT_WIDTH 100
+
+#define TIME_HEIGHT 50
+#define TIME_WIDTH 450
 
 struct Sprite {
     int * pixel_arr;
@@ -103,19 +108,137 @@ void makeLifeBar(Sprite* sp, int lifepoints) {
     
 }
 
-void makeRightArrow(Sprite* sp, size_t x_pos, size_t y_pos){
+void makeRightArrow(Sprite* sp, size_t x_pos, size_t y_pos, int arrow_col){
     sp->x_pos = x_pos;
     sp->y_pos = y_pos;
     sp->width = ARROW_HEIGHT_WIDTH;
     sp->height = ARROW_HEIGHT_WIDTH;
     sp->pixel_arr = (int*) malloc(ARROW_HEIGHT_WIDTH*ARROW_HEIGHT_WIDTH*sizeof(int));
+    
     size_t row,col;
+    int color;
+
     for (row = 0; row < ARROW_HEIGHT_WIDTH; row++) {
         for (col = 0; col < ARROW_HEIGHT_WIDTH; col++) {
-           setPixelAt(col,row,sp,BRIGHT_BLUE); 
+
+           if ((row < ARROW_HEIGHT_WIDTH/4 && col < ARROW_HEIGHT_WIDTH/2) ||
+               (row > 3*ARROW_HEIGHT_WIDTH/4 && col <ARROW_HEIGHT_WIDTH/2) ||
+               ((row < (col-ARROW_HEIGHT_WIDTH/2) || row > (3*ARROW_HEIGHT_WIDTH/2 - col)) && col > 50)) {
+                
+               color = BLACK;
+
+           } 
+             else {
+               color = arrow_col; 
+            }
+              setPixelAt(col,row,sp,color);
          }
     }
 
+}
+
+void makeLeftArrow(Sprite* sp, size_t x_pos, size_t y_pos, int arrow_col){
+    sp->x_pos = x_pos;
+    sp->y_pos = y_pos;
+    sp->width = ARROW_HEIGHT_WIDTH;
+    sp->height = ARROW_HEIGHT_WIDTH;
+    sp->pixel_arr = (int*) malloc(ARROW_HEIGHT_WIDTH*ARROW_HEIGHT_WIDTH*sizeof(int));
+    
+    size_t row,col;
+    int color;
+
+    for (row = 0; row < ARROW_HEIGHT_WIDTH; row++) {
+        for (col = 0; col < ARROW_HEIGHT_WIDTH; col++) {
+
+           if ((row < ARROW_HEIGHT_WIDTH/4 && col > ARROW_HEIGHT_WIDTH/2) ||
+               (row > 3*ARROW_HEIGHT_WIDTH/4 && col > ARROW_HEIGHT_WIDTH/2) ||
+               ((row < ARROW_HEIGHT_WIDTH/2 - col || row > ARROW_HEIGHT_WIDTH/2 + col ) && col < 50)) {
+                
+               color = BLACK;
+
+           } 
+             else {
+               color = arrow_col; 
+            }
+              setPixelAt(col,row,sp,color);
+         }
+    }
+
+}
+
+void makeUpArrow(Sprite* sp, size_t x_pos, size_t y_pos, int arrow_col){
+    sp->x_pos = x_pos;
+    sp->y_pos = y_pos;
+    sp->width = ARROW_HEIGHT_WIDTH;
+    sp->height = ARROW_HEIGHT_WIDTH;
+    sp->pixel_arr = (int*) malloc(ARROW_HEIGHT_WIDTH*ARROW_HEIGHT_WIDTH*sizeof(int));
+    
+    size_t row,col;
+    int color;
+
+    for (row = 0; row < ARROW_HEIGHT_WIDTH; row++) {
+        for (col = 0; col < ARROW_HEIGHT_WIDTH; col++) {
+
+           if ((col < ARROW_HEIGHT_WIDTH/4 && row > ARROW_HEIGHT_WIDTH/2) ||
+               (col > 3*ARROW_HEIGHT_WIDTH/4 && row > ARROW_HEIGHT_WIDTH/2) ||
+               ((col < ARROW_HEIGHT_WIDTH/2 - row || col > ARROW_HEIGHT_WIDTH/2 + row ) && row < 50)) {
+                
+               color = BLACK;
+
+           } 
+             else {
+               color = arrow_col; 
+            }
+              setPixelAt(col,row,sp,color);
+         }
+    }
+
+}
+
+void makeDownArrow(Sprite* sp, size_t x_pos, size_t y_pos, int arrow_col){
+    sp->x_pos = x_pos;
+    sp->y_pos = y_pos;
+    sp->width = ARROW_HEIGHT_WIDTH;
+    sp->height = ARROW_HEIGHT_WIDTH;
+    sp->pixel_arr = (int*) malloc(ARROW_HEIGHT_WIDTH*ARROW_HEIGHT_WIDTH*sizeof(int));
+    
+    size_t row,col;
+    int color;
+
+    for (row = 0; row < ARROW_HEIGHT_WIDTH; row++) {
+        for (col = 0; col < ARROW_HEIGHT_WIDTH; col++) {
+
+           if ((col < ARROW_HEIGHT_WIDTH/4 && row < ARROW_HEIGHT_WIDTH/2) ||
+               (col > 3*ARROW_HEIGHT_WIDTH/4 && row <ARROW_HEIGHT_WIDTH/2) ||
+               ((col < (row-ARROW_HEIGHT_WIDTH/2) || col > (3*ARROW_HEIGHT_WIDTH/2 - row)) && row > 50)) {
+                
+               color = BLACK;
+
+           } 
+             else {
+               color = arrow_col; 
+            }
+              setPixelAt(col,row,sp,color);
+         }
+    }
+
+}
+
+void makeTimerBar(Sprite* sp, size_t x_pos, size_t y_pos) {
+    sp->x_pos = x_pos;
+    sp->y_pos = y_pos;
+    sp->height = TIME_HEIGHT;
+    sp->width = TIME_WIDTH;
+    sp->pixel_arr = (int *) malloc(TIME_HEIGHT*TIME_WIDTH*sizeof(int));
+    
+    size_t row, col;
+    for (row = 0; row < TIME_HEIGHT; row++) {
+        for (col = 0; col < TIME_WIDTH; col++) {
+            
+            int color = (unsigned int)WHITE - (0xd400)*col/(TIME_WIDTH-1);
+            setPixelAt(col,row,sp,color);
+        }
+     } 
 }
 
 int main(int argc, char* argv[])
@@ -164,16 +287,36 @@ int main(int argc, char* argv[])
     while(1) {
         int screen[1920*1080]; //Temp array to hold next state of screen
         
-        Sprite life;
+        Sprite life, time;
         makeLifeBar(&life,9);
+        makeTimerBar(&time,300,430);
 
         Sprite arrow;
-        makeRightArrow(&arrow,300,300);
-        
+        makeRightArrow(&arrow,300,500,BLUE);
+        Sprite leftarrow;
+        makeLeftArrow(&leftarrow,410,500,BLUE);
+        Sprite uparrow;
+        makeUpArrow(&uparrow,520,500,BLUE);
+        Sprite downarrow;
+        makeDownArrow(&downarrow,630,500,GREEN);
+
         clearContents(screen,screensize_in_int);
         placeSprite(screen, &life);
         placeSprite(screen,&arrow);
+        placeSprite(screen,&leftarrow);
+        placeSprite(screen,&uparrow);
+        placeSprite(screen,&downarrow);
+        placeSprite(screen,&time);
+
+        
+
         updateScreen(fbp,screen,screensize_in_int);
+        free(arrow.pixel_arr);
+        free(leftarrow.pixel_arr);
+        free(uparrow.pixel_arr);
+        free(downarrow.pixel_arr);   
+        free(time.pixel_arr);
+        free(life.pixel_arr);
     }
     /*int* ip;
     for (ip = fbp; ip < fbp + screensize_in_int; ip++) {
@@ -189,6 +332,7 @@ int main(int argc, char* argv[])
   }
 
   // cleanup
+  
   munmap(fbp, screensize);
   close(fbfd);
   return 0;
