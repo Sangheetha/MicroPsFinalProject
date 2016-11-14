@@ -235,10 +235,40 @@ void makeTimerBar(Sprite* sp, size_t x_pos, size_t y_pos) {
     for (row = 0; row < TIME_HEIGHT; row++) {
         for (col = 0; col < TIME_WIDTH; col++) {
             
-            int color = (unsigned int)WHITE - (0xd400)*col/(TIME_WIDTH-1);
+            int color = (unsigned int)WHITE - (unsigned int)(0xd400)*col/(TIME_WIDTH-1);
             setPixelAt(col,row,sp,color);
         }
      } 
+}
+
+void makeTimerMark(Sprite* sp, size_t x_pos, size_t y_pos) {
+    sp->x_pos = x_pos;
+    sp->y_pos = y_pos;
+    sp->height = TIME_HEIGHT + 20;
+    sp->width = TIME_WIDTH/37;
+    printf("The width is %d pixels", sp->width);
+
+    sp->pixel_arr = (int *) malloc(sp->height*sp->width*sizeof(int));
+
+    size_t row, col;
+    int color;
+
+    for (row = 0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col++) {
+           if ((col < sp->width/2 - row ||
+                col > sp->width/2 + row ) && row < 6) {
+                setPixelAt(col,row,sp,BLACK);
+           } else if (!(row > sp->width/2 &&
+                        (col < sp->width/4 || col > 3*sp->width/4))) {
+                setPixelAt(col,row,sp,BLUE);
+           }
+        }
+     } 
+
+}
+
+void moveSpriteRight(Sprite* sp) {
+    sp->x_pos++;
 }
 
 int main(int argc, char* argv[])
@@ -284,12 +314,10 @@ int main(int argc, char* argv[])
   else {
     // draw...
     // just fill upper half of the screen with something
-    while(1) {
-        int screen[1920*1080]; //Temp array to hold next state of screen
-        
-        Sprite life, time;
+        Sprite life, time, mark;
         makeLifeBar(&life,9);
         makeTimerBar(&time,300,430);
+        makeTimerMark(&mark,315,415);
 
         Sprite arrow;
         makeRightArrow(&arrow,300,500,BLUE);
@@ -300,6 +328,10 @@ int main(int argc, char* argv[])
         Sprite downarrow;
         makeDownArrow(&downarrow,630,500,GREEN);
 
+    while(1) {
+        int screen[1920*1080]; //Temp array to hold next state of screen
+        
+        
         clearContents(screen,screensize_in_int);
         placeSprite(screen, &life);
         placeSprite(screen,&arrow);
@@ -307,17 +339,22 @@ int main(int argc, char* argv[])
         placeSprite(screen,&uparrow);
         placeSprite(screen,&downarrow);
         placeSprite(screen,&time);
+        placeSprite(screen,&mark);
 
         
 
         updateScreen(fbp,screen,screensize_in_int);
-        free(arrow.pixel_arr);
-        free(leftarrow.pixel_arr);
-        free(uparrow.pixel_arr);
-        free(downarrow.pixel_arr);   
-        free(time.pixel_arr);
-        free(life.pixel_arr);
-    }
+
+        moveSpriteRight(&mark);
+     }
+     free(arrow.pixel_arr);
+     free(leftarrow.pixel_arr);
+     free(uparrow.pixel_arr);
+     free(downarrow.pixel_arr);   
+     free(time.pixel_arr);
+     free(life.pixel_arr);
+     free(mark.pixel_arr);
+       
     /*int* ip;
     for (ip = fbp; ip < fbp + screensize_in_int; ip++) {
         *ip = RED; 
