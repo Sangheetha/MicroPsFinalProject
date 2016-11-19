@@ -27,6 +27,15 @@
 #define TIME_HEIGHT 50
 #define TIME_WIDTH 450
 
+#define LIFE_BAR 0
+#define RIGHT_ARROW 4
+#define LEFT_ARROW 3
+#define DOWN_ARROW 2
+#define UP_ARROW 1
+#define TIMER_BAR 5
+#define TIMER_MARK 6
+#define INVALID_SPRITE 0xF
+
 struct Sprite {
     int * pixel_arr;
     int width;
@@ -37,16 +46,18 @@ struct Sprite {
 
 typedef struct Sprite Sprite;
 
-/*struct GameScreen {
+struct GameScreen {
     int pixel_arr[SCREEN_WIDTH*SCREEN_HEIGHT];
-    Sprite sprite_arr[20];
+    Sprite key_arr[20];
     size_t size;
-} GameScreen;
+    size_t arrow_index;
+    int life_1;
+    Sprite timer_mark_1;
+};
 
-void addSpriteToGame(Sprite sp,GameScreen* g) {
-    //Not sure if necesary
-    
-}*/
+typedef struct GameScreen GameScreen;
+
+
 void clearContents(int *fbp, long int screensize_int) {
 
     int* lp;
@@ -101,7 +112,6 @@ void makeLifeBar(Sprite* sp, int lifepoints) {
     sp->x_pos = LIFE_BAR_X_POS;
     sp->y_pos = LIFE_BAR_Y_POS;
     sp->pixel_arr = (int*) malloc(LIFE_BAR_MAX_WIDTH*LIFE_BAR_HEIGHT*sizeof(int));
-       
     size_t max_col = lifepoints*LIFE_BAR_MAX_WIDTH/LIFE_POINTS; 
     size_t row,col;
     for (row = 0; row < LIFE_BAR_HEIGHT; row++) {
@@ -117,6 +127,7 @@ void makeLifeBar(Sprite* sp, int lifepoints) {
     }
     
 }
+
 
 void makeRightArrow(Sprite* sp, size_t x_pos, size_t y_pos, int arrow_col){
     sp->x_pos = x_pos;
@@ -256,7 +267,6 @@ void makeTimerMark(Sprite* sp, size_t x_pos, size_t y_pos) {
     sp->y_pos = y_pos;
     sp->height = TIME_HEIGHT + 20;
     sp->width = TIME_WIDTH/37;
-    printf("The width is %d pixels", sp->width);
 
     sp->pixel_arr = (int *) malloc(sp->height*sp->width*sizeof(int));
 
@@ -291,6 +301,45 @@ void changeArrowColor(Sprite*sp, int color) {
         }
     }
 
+}
+
+void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
+    
+    Sprite sp;
+    Sprite* keys = g->key_arr;
+    size_t numKeys = g->size;
+    switch(sprite_name) {
+        case INVALID_SPRITE:
+          break;
+        case LIFE_BAR:
+          makeLifeBar(&sp,g->life_1);
+          placeSprite(g->pixel_arr, &sp);
+          free(sp.pixel_arr);
+          break;
+        case RIGHT_ARROW:
+          makeRightArrow(&keys[numKeys],x_pos, y_pos,BLUE);
+          g->size++;
+          break;
+        case LEFT_ARROW:
+          makeLeftArrow(&keys[numKeys],x_pos,y_pos,BLUE);
+          g->size++;
+          break;
+        case DOWN_ARROW:
+          makeDownArrow(&keys[numKeys],x_pos,y_pos,BLUE);
+          g->size++;
+          break;
+        case UP_ARROW:
+          makeUpArrow(&keys[numKeys],x_pos,y_pos,BLUE);
+          break;
+        case TIMER_BAR:
+          makeTimerBar(&sp,x_pos,y_pos);
+          placeSprite(g->pixel_arr,&sp);
+          free(sp.pixel_arr);
+          break;
+        case TIMER_MARK:
+          makeTimerMark(&(g->timer_mark_1),x_pos,y_pos);
+          break;
+    }
 }
 
 int setUpFrameBuffer(int **fbp, long int *screensize_in_int, int* fbfd) {

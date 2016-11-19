@@ -3,7 +3,9 @@
 #include "fbdisplay.h"
 
 #define START_SCREEN 0
-#define PLAY_GAME_ONE 1
+#define INIT_LEVEL_ONE 1
+#define PLAY_LEVEL_ONE 2
+
 
 int main(int argc, char* argv[]) {
   //Setup Frame Buffer
@@ -13,18 +15,31 @@ int main(int argc, char* argv[]) {
   setUpFrameBuffer(&fbp,&screensize_in_int, &fbfd);
   
   int game_state;
-
+  GameScreen screen;
+  printf("before whilei\n");
   while(1) {
     //Grab the game_state from the FPGA w SPI.
     //For now, we're always playing the game
-    game_state = PLAY_GAME_ONE
+    game_state = INIT_LEVEL_ONE;
 
-    if (game_state = START_SCREEN) {
-        //Render start screen
-    } 
-    else if (game_state = PLAY_GAME_ONE) {
-        
-    }
+    switch(game_state)
+    {   
+        case START_SCREEN:
+           //Render start screen lomo
+        case INIT_LEVEL_ONE:
+            //Initialize level for one-player
+            //TODO: Get life, get arrows, fake stuff here
+            screen.life_1 = 10;
+            addSpriteToGame(LIFE_BAR,&screen,0,0); 
+            addSpriteToGame(TIMER_BAR,&screen,300,430);
+        case PLAY_LEVEL_ONE:
+            //Play level for one-player
+        default:
+            break;
+   } 
+    
+   printf("after while\n");
+   updateScreen(fbp,screen.pixel_arr,screensize_in_int);
   }
   Sprite life, time, mark;
   makeLifeBar(&life,9);
@@ -41,8 +56,7 @@ int main(int argc, char* argv[]) {
   makeDownArrow(&downarrow,630,500,GREEN);
 
   while(1) {
-    int screen[1920*1080]; //Temp array to hold next state of screen
-    
+   /* 
     clearContents(screen,screensize_in_int);
     placeSprite(screen, &life);
     placeSprite(screen,&arrow);
@@ -56,7 +70,7 @@ int main(int argc, char* argv[]) {
 
     updateScreen(fbp,screen,screensize_in_int);
 
-    moveSpriteRight(&mark);
+    moveSpriteRight(&mark);*/
   }
   free(arrow.pixel_arr);
   free(leftarrow.pixel_arr);
