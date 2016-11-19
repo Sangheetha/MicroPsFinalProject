@@ -354,6 +354,36 @@ void updateGameScreenSinglePlayer(GameScreen * g)
     }
 }
 
+int levelOver(GameScreen * g)
+{
+    Sprite timer_mark = g->timer_mark_1;
+    Sprite timer_bar = g->timer_bar_1;
+    return ((timer_mark.x_pos + timer_mark.width) > timer_bar.x_pos + timer_bar.width); 
+}
+
+void resetKeys(GameScreen *g) {
+    size_t i;
+    for (i = 0; i <= g->arrow_index; i++) {
+        changeArrowColor(&(g->key_arr[i]),BLUE);
+    }
+
+    g->arrow_index = 0;
+}
+
+void clearSprites(GameScreen *g) {
+    free(g->timer_mark_1.pixel_arr);
+    free(g->timer_bar_1.pixel_arr);
+    free(g->life_bar_1.pixel_arr);
+
+    size_t i;
+    for (i = 0; i <= g->arrow_index; i++) {
+        free(g->key_arr[i].pixel_arr);
+    }
+
+    g->arrow_index = 0;
+    g->size = 0;
+}
+
 int setUpFrameBuffer(int **fbp, long int *screensize_in_int, int* fbfd) {
   struct fb_var_screeninfo vinfo;
   struct fb_fix_screeninfo finfo;
