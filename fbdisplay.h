@@ -52,7 +52,9 @@ struct GameScreen {
     size_t size;
     size_t arrow_index;
     int life_1;
+    Sprite timer_bar_1;
     Sprite timer_mark_1;
+    Sprite life_bar_1;
 };
 
 typedef struct GameScreen GameScreen;
@@ -265,7 +267,7 @@ void makeTimerBar(Sprite* sp, size_t x_pos, size_t y_pos) {
 void makeTimerMark(Sprite* sp, size_t x_pos, size_t y_pos) {
     sp->x_pos = x_pos;
     sp->y_pos = y_pos;
-    sp->height = TIME_HEIGHT + 20;
+    sp->height = TIME_HEIGHT;
     sp->width = TIME_WIDTH/37;
 
     sp->pixel_arr = (int *) malloc(sp->height*sp->width*sizeof(int));
@@ -288,6 +290,8 @@ void makeTimerMark(Sprite* sp, size_t x_pos, size_t y_pos) {
 }
 
 void moveSpriteRight(Sprite* sp) {
+    sp->x_pos++;
+    sp->x_pos++;
     sp->x_pos++;
 }
 
@@ -312,9 +316,7 @@ void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
         case INVALID_SPRITE:
           break;
         case LIFE_BAR:
-          makeLifeBar(&sp,g->life_1);
-          placeSprite(g->pixel_arr, &sp);
-          free(sp.pixel_arr);
+          makeLifeBar(&(g->life_bar_1),g->life_1);
           break;
         case RIGHT_ARROW:
           makeRightArrow(&keys[numKeys],x_pos, y_pos,BLUE);
@@ -330,15 +332,25 @@ void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
           break;
         case UP_ARROW:
           makeUpArrow(&keys[numKeys],x_pos,y_pos,BLUE);
+          g->size++;
           break;
         case TIMER_BAR:
-          makeTimerBar(&sp,x_pos,y_pos);
-          placeSprite(g->pixel_arr,&sp);
-          free(sp.pixel_arr);
+          makeTimerBar(&(g->timer_bar_1),x_pos,y_pos);
           break;
         case TIMER_MARK:
           makeTimerMark(&(g->timer_mark_1),x_pos,y_pos);
           break;
+    }
+}
+
+void updateGameScreenSinglePlayer(GameScreen * g) 
+{
+    placeSprite(g->pixel_arr,&(g->life_bar_1));
+    placeSprite(g->pixel_arr,&(g->timer_bar_1));
+    placeSprite(g->pixel_arr,&(g->timer_mark_1));
+    size_t i;
+    for (i = 0; i < g->size; i++) {
+        placeSprite(g->pixel_arr,&(g->key_arr[i]));
     }
 }
 

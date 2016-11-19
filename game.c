@@ -16,11 +16,14 @@ int main(int argc, char* argv[]) {
   
   int game_state;
   GameScreen screen;
+  screen.size = 0;
   printf("before whilei\n");
+
+  int count = 0;
   while(1) {
     //Grab the game_state from the FPGA w SPI.
     //For now, we're always playing the game
-    game_state = INIT_LEVEL_ONE;
+    game_state = (count == 0)? INIT_LEVEL_ONE:PLAY_LEVEL_ONE;
 
     switch(game_state)
     {   
@@ -32,14 +35,18 @@ int main(int argc, char* argv[]) {
             screen.life_1 = 10;
             addSpriteToGame(LIFE_BAR,&screen,0,0); 
             addSpriteToGame(TIMER_BAR,&screen,300,430);
+            addSpriteToGame(TIMER_MARK,&screen,300,430);
+            updateGameScreenSinglePlayer(&screen);
         case PLAY_LEVEL_ONE:
+            moveSpriteRight(&(screen.timer_mark_1));
+            updateGameScreenSinglePlayer(&screen);
             //Play level for one-player
         default:
             break;
    } 
     
-   printf("after while\n");
    updateScreen(fbp,screen.pixel_arr,screensize_in_int);
+   count++;
   }
   Sprite life, time, mark;
   makeLifeBar(&life,9);
