@@ -1,4 +1,4 @@
 CC = gcc
 
-fbdisplay: fbdisplay.c
-	$(CC) -o fbdisplay fbdisplay.c
+game: fbdisplay.h game.c
+	$(CC) -o game game.c

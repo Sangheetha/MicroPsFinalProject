@@ -37,6 +37,16 @@ struct Sprite {
 
 typedef struct Sprite Sprite;
 
+/*struct GameScreen {
+    int pixel_arr[SCREEN_WIDTH*SCREEN_HEIGHT];
+    Sprite sprite_arr[20];
+    size_t size;
+} GameScreen;
+
+void addSpriteToGame(Sprite sp,GameScreen* g) {
+    //Not sure if necesary
+    
+}*/
 void clearContents(int *fbp, long int screensize_int) {
 
     int* lp;
@@ -189,7 +199,7 @@ void makeUpArrow(Sprite* sp, size_t x_pos, size_t y_pos, int arrow_col){
              else {
                color = arrow_col; 
             }
-              setPixelAt(col,row,sp,color);
+             setPixelAt(col,row,sp,color);
          }
     }
 
@@ -271,106 +281,63 @@ void moveSpriteRight(Sprite* sp) {
     sp->x_pos++;
 }
 
-int main(int argc, char* argv[])
-{
-  int fbfd = 0;
+void changeArrowColor(Sprite*sp, int color) {
+    size_t row, col;
+    for (row = 0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col++) {
+            if (getPixelAt(col,row,sp) != BLACK) {
+                setPixelAt(col,row,sp,color);
+             }
+        }
+    }
+
+}
+
+int setUpFrameBuffer(int **fbp, long int *screensize_in_int, int* fbfd) {
   struct fb_var_screeninfo vinfo;
   struct fb_fix_screeninfo finfo;
   long int screensize = 0;
-  int *fbp = 0;
 
   // Open the file for reading and writing
-  fbfd = open("/dev/fb0", O_RDWR);
-  if (!fbfd) {
+  *fbfd = open("/dev/fb0", O_RDWR);
+  if (!*fbfd) {
     printf("Error: cannot open framebuffer device.\n");
     return(1);
   }
   printf("The framebuffer device was opened successfully.\n");
 
   // Get fixed screen information
-  if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo)) {
+  if (ioctl(*fbfd, FBIOGET_FSCREENINFO, &finfo)) {
     printf("Error reading fixed information.\n");
   }
 
   // Get variable screen information
-  if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo)) {
+  if (ioctl(*fbfd, FBIOGET_VSCREENINFO, &vinfo)) {
     printf("Error reading variable information.\n");
   }
   printf("%dx%d, %d bpp\n", vinfo.xres, vinfo.yres, 
          vinfo.bits_per_pixel );
   // map framebuffer to user memory 
   screensize = finfo.smem_len;
-  long int screensize_in_int = screensize/4;
+  *screensize_in_int = screensize/4;
 
-  fbp = (int*)mmap(0, 
+  *fbp = (int*)mmap(0, 
                     screensize, 
                     PROT_READ | PROT_WRITE, 
                     MAP_SHARED, 
-                    fbfd, 0);
+                    *fbfd, 0);
 
-  if ((int)fbp == -1) {
+  if ((int)*fbp == -1) {
     printf("Failed to mmap.\n");
+    return(1);
+  } else {
+    return 0;
   }
-  else {
-    // draw...
-    // just fill upper half of the screen with something
-        Sprite life, time, mark;
-        makeLifeBar(&life,9);
-        makeTimerBar(&time,300,430);
-        makeTimerMark(&mark,315,415);
+}
 
-        Sprite arrow;
-        makeRightArrow(&arrow,300,500,BLUE);
-        Sprite leftarrow;
-        makeLeftArrow(&leftarrow,410,500,BLUE);
-        Sprite uparrow;
-        makeUpArrow(&uparrow,520,500,BLUE);
-        Sprite downarrow;
-        makeDownArrow(&downarrow,630,500,GREEN);
+void tearDownFrameBuffer(int* fbp, int fbfd,long int screensize_in_int) {
 
-    while(1) {
-        int screen[1920*1080]; //Temp array to hold next state of screen
-        
-        
-        clearContents(screen,screensize_in_int);
-        placeSprite(screen, &life);
-        placeSprite(screen,&arrow);
-        placeSprite(screen,&leftarrow);
-        placeSprite(screen,&uparrow);
-        placeSprite(screen,&downarrow);
-        placeSprite(screen,&time);
-        placeSprite(screen,&mark);
-
-        
-
-        updateScreen(fbp,screen,screensize_in_int);
-
-        moveSpriteRight(&mark);
-     }
-     free(arrow.pixel_arr);
-     free(leftarrow.pixel_arr);
-     free(uparrow.pixel_arr);
-     free(downarrow.pixel_arr);   
-     free(time.pixel_arr);
-     free(life.pixel_arr);
-     free(mark.pixel_arr);
-       
-    /*int* ip;
-    for (ip = fbp; ip < fbp + screensize_in_int; ip++) {
-        *ip = RED; 
-    }
-    int* lp;
-    for (lp = ip; lp < ip + screensize_in_int; lp++) {
-        *lp = 0xf0;
-    }*/
-    //printf("screensize is %d\n" , screensize);
-    // and lower half with something else
-    
-  }
-
-  // cleanup
-  
-  munmap(fbp, screensize);
+  munmap(fbp, screensize_in_int*4);
   close(fbfd);
-  return 0;
+
 }
