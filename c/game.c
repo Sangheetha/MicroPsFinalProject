@@ -19,6 +19,7 @@
 /////////////////////////////////////
 
 void getLevelInfo(GameScreen *);
+void keyMatch(int *, int *, int *);
 
 ////////////////////////////////////
 //Main
@@ -27,7 +28,10 @@ void getLevelInfo(GameScreen *);
 int main(int argc, char* argv[]) {
   //Setup I/O
   pioInit();
-  spiInit(1000000,0);
+  spiInit(244000,0);
+
+  pinMode(LOAD_PIN,OUTPUT);
+  pinMode(DONE_PIN,INPUT);
   
   //Setup Frame Buffer
   int* fbp;
@@ -43,7 +47,7 @@ int main(int argc, char* argv[]) {
   printf("before whilei\n");
 
   int count = 0;
-
+  int timer_done;
   int wrong_button;
   int change_arrow;
     
@@ -66,21 +70,20 @@ int main(int argc, char* argv[]) {
             
             clearContents(screen.pixel_arr,screensize_in_int);
             //TODO: Get life, get arrows, fake stuff here for now
-            screen.life_1 = 10;
+            getLevelInfo(&screen);
             addSpriteToGame(LIFE_BAR,&screen,0,0); 
             addSpriteToGame(TIMER_BAR,&screen,300,430);
             addSpriteToGame(TIMER_MARK,&screen,300,430);
-            addSpriteToGame(RIGHT_ARROW,&screen,300,500);
-            addSpriteToGame(DOWN_ARROW,&screen,410,500);
-            addSpriteToGame(DOWN_ARROW,&screen,520,500);
-            addSpriteToGame(LEFT_ARROW,&screen,630,500);
             updateGameScreenSinglePlayer(&screen);
             next_state = PLAY_LEVEL_ONE;
+            break;
         case PLAY_LEVEL_ONE:
             //Play level for one-player
             //Check if the level is over, whether a wrong/correct button was
             //pressed.
-            if (levelOver(&screen)) {
+            timer_done = levelOver(&screen);
+            keyMatch(&timer_done,&change_arrow,&wrong_button);
+            if (timer_done) {
                 printf("Time is up!\n");
                 next_state = INIT_LEVEL_ONE;
                 clearSprites(&screen); 
@@ -127,25 +130,51 @@ void getLevelInfo(GameScreen *g) {
     digitalWrite(LOAD_PIN,0);
 
     while(!digitalRead(DONE_PIN));
-
+    spiSendReceive(0);
     death_life_level = spiSendReceive(0);
-    for (i = 0; i < MAX_KEYS; i++) {
+    //printf("first SPI result is %x\n", spiSendReceive(0));
+
+    for (i = 0; i < MAX_KEYS/2; i++) {
         messArr[i] = spiSendReceive(0);
     }
-    
+
+    SPI0CSbits.TA = 0;
+
     g->life_1 = (death_life_level >> 4)&0x7; //Extract life
+    printf("life is %x\n", g->life_1);
     g->level = death_life_level&0xF; //Extract level
 
     for (i = 0; i < MAX_KEYS; i ++) {
         index = i/2;
         offset = i%2;
         current_key = (messArr[index] >> 4*offset)&0xF;
-        if (current_key == 0xF) {
-            break;
-        } else {
+        printf("current key is %x\n", current_key);
+        
+        if (current_key != 0xF) {
             addSpriteToGame(current_key, g, 300 + i*110, 500);
         }
     }
+}
+
+void keyMatch(int * timer_done, int * change_arrow, int * wrong_key) {
+
+   char match_info;
+
+   char opcode = KEY_MATCH_OPCODE&(*timer_done);
+ 
+   digitalWrite(LOAD_PIN, 1);
+    
+   spiSendReceive(opcode);
+
+   digitalWrite(LOAD_PIN,0);
+
+   while(!digitalRead(DONE_PIN));
+
+   match_info = spiSendReceive(0);
+
+   *change_arrow = (match_info >> 7)&0x1;
+   *wrong_key = (match_info >> 6)&0x1;
+
 }
 
  

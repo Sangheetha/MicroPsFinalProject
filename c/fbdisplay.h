@@ -18,7 +18,7 @@
 
 #define LIFE_BAR_HEIGHT 75
 #define LIFE_BAR_MAX_WIDTH 400
-#define LIFE_POINTS 10
+#define LIFE_POINTS 7
 #define LIFE_BAR_X_POS 100
 #define LIFE_BAR_Y_POS 50
 
