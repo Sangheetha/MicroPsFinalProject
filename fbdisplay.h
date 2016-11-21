@@ -49,6 +49,7 @@ typedef struct Sprite Sprite;
 struct GameScreen {
     int pixel_arr[SCREEN_WIDTH*SCREEN_HEIGHT];
     Sprite key_arr[20];
+    size_t level;
     size_t size;
     size_t arrow_index;
     int life_1;

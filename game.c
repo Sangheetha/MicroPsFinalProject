@@ -7,6 +7,22 @@
 #define INIT_LEVEL_ONE 1
 #define PLAY_LEVEL_ONE 2
 
+#define MAX_KEYS 4
+
+#define LOAD_PIN 23
+#define DONE_PIN 24
+#define LEVEL_INFO_OPCODE 0x10
+#define KEY_MATCH_OPCODE 0x20
+
+/////////////////////////////////////
+///SPI Functions Prototype 
+/////////////////////////////////////
+
+void getLevelInfo(GameScreen *);
+
+////////////////////////////////////
+//Main
+///////////////////////////////////
 
 int main(int argc, char* argv[]) {
   //Setup I/O
@@ -31,11 +47,13 @@ int main(int argc, char* argv[]) {
   int wrong_button;
   int change_arrow;
     
+  //Before start screen is made, we start with p1 game
+  next_state = INIT_LEVEL_ONE;
 
   while(1) {
     //Grab the game_state from the FPGA w SPI.
     //For now, we're always playing the game
-    game_state  = (count == 0)? INIT_LEVEL_ONE:next_state;
+    game_state  = next_state;
     change_arrow = (count%50)? 0:1;
     wrong_button = (count == 76)? 1:0;
 
@@ -86,47 +104,48 @@ int main(int argc, char* argv[]) {
    updateScreen(fbp,screen.pixel_arr,screensize_in_int);
    count++;
   }
-  Sprite life, time, mark;
-  makeLifeBar(&life,9);
-  makeTimerBar(&time,300,430);
-  makeTimerMark(&mark,315,415);
-       
-  Sprite arrow;
-  makeRightArrow(&arrow,300,500,BLUE);
-  Sprite leftarrow;
-  makeLeftArrow(&leftarrow,410,500,BLUE);
-  Sprite uparrow;
-  makeUpArrow(&uparrow,520,500,BLUE);
-  Sprite downarrow;
-  makeDownArrow(&downarrow,630,500,GREEN);
-
-  while(1) {
-   /* 
-    clearContents(screen,screensize_in_int);
-    placeSprite(screen, &life);
-    placeSprite(screen,&arrow);
-    placeSprite(screen,&leftarrow);
-    placeSprite(screen,&uparrow);
-    placeSprite(screen,&downarrow);
-    placeSprite(screen,&time);
-    placeSprite(screen,&mark);
-
-        
-
-    updateScreen(fbp,screen,screensize_in_int);
-
-    moveSpriteRight(&mark);*/
-  }
-  free(arrow.pixel_arr);
-  free(leftarrow.pixel_arr);
-  free(uparrow.pixel_arr);
-  free(downarrow.pixel_arr);   
-  free(time.pixel_arr);
-  free(life.pixel_arr);
-  free(mark.pixel_arr);
-       
   // cleanup
   tearDownFrameBuffer(fbp, fbfd, screensize_in_int);
   return 0;
 }
+
+///////////////////////////////////
+// Functions
+///////////////////////////////////
+
+void getLevelInfo(GameScreen *g) {
+    
+    char death_life_level;
+    char messArr[MAX_KEYS/2];
+    size_t i, index, offset;
+    int current_key;
+
+    digitalWrite(LOAD_PIN,1);
+
+    spiSendReceive(LEVEL_INFO_OPCODE);
+
+    digitalWrite(LOAD_PIN,0);
+
+    while(!digitalRead(DONE_PIN));
+
+    death_life_level = spiSendReceive(0);
+    for (i = 0; i < MAX_KEYS; i++) {
+        messArr[i] = spiSendReceive(0);
+    }
+    
+    g->life_1 = (death_life_level >> 4)&0x7; //Extract life
+    g->level = death_life_level&0xF; //Extract level
+
+    for (i = 0; i < MAX_KEYS; i ++) {
+        index = i/2;
+        offset = i%2;
+        current_key = (messArr[index] >> 4*offset)&0xF;
+        if (current_key == 0xF) {
+            break;
+        } else {
+            addSpriteToGame(current_key, g, 300 + i*110, 500);
+        }
+    }
+}
+
  
