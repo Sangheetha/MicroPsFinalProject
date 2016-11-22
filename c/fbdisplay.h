@@ -375,9 +375,9 @@ void clearSprites(GameScreen *g) {
     free(g->timer_mark_1.pixel_arr);
     free(g->timer_bar_1.pixel_arr);
     free(g->life_bar_1.pixel_arr);
-
+    
     size_t i;
-    for (i = 0; i <= g->arrow_index; i++) {
+    for (i = 0; i < g->size; i++) {
         free(g->key_arr[i].pixel_arr);
     }
 
