@@ -79,7 +79,6 @@ int main(int argc, char* argv[]) {
             addSpriteToGame(TIMER_MARK,&screen,300,430);
             updateGameScreenSinglePlayer(&screen);
             next_state = (start == 0)?PLAY_LEVEL_ONE:INIT_LEVEL_ONE;
-            
             break;
         case PLAY_LEVEL_ONE:
             //Play level for one-player
@@ -97,7 +96,9 @@ int main(int argc, char* argv[]) {
                     changeArrowColor(&(screen.key_arr[screen.arrow_index]),GREEN);
                     screen.arrow_index++;
                 } else if (wrong_button) {
-                    resetKeys(&screen);
+                    if (screen.arrow_index < screen.size) {
+                        resetKeys(&screen);
+                    }
                 }
             }
             moveSpriteRight(&(screen.timer_mark_1));
@@ -125,6 +126,7 @@ int getLevelInfo(GameScreen *g) {
     size_t i, index, offset;
     int current_key;
 
+
     digitalWrite(LOAD_PIN,1);
 
     spiSendReceive(LEVEL_INFO_OPCODE);
@@ -143,7 +145,6 @@ int getLevelInfo(GameScreen *g) {
     
     g->life_1 = (death_life_level >> 4)&0x7; //Extract life
     g->level = death_life_level&0xF; //Extract level
-
 
     for (i = 0; i < MAX_KEYS; i ++) {
         index = i/2;
@@ -167,7 +168,7 @@ void keyMatch(int * timer_done, int * change_arrow, int * wrong_key) {
  
    digitalWrite(LOAD_PIN, 1);
     
-   spiSendReceive(0b00110000);
+   spiSendReceive(0x20);
 
    digitalWrite(LOAD_PIN,0);
 
@@ -176,13 +177,12 @@ void keyMatch(int * timer_done, int * change_arrow, int * wrong_key) {
    match_info = spiSendReceive(0);
    spiSendReceive(0);
    spiSendReceive(0);
-
-   *change_arrow = (match_info >> 7)&0x1;
-   *wrong_key = (match_info)&0x1;
    if (match_info != 0) {
-    printf("match info is %x\n",match_info);
+    printf("match_info is %d\n", match_info);
    }
 
+   *change_arrow = (match_info >> 7)&0x1;
+   *wrong_key = (match_info >> 6)&0x1;
 }
 
  

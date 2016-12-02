@@ -22,6 +22,9 @@
 #define LIFE_BAR_X_POS 100
 #define LIFE_BAR_Y_POS 50
 
+#define LEVEL_WIDTH 500
+#define LEVEL_HEIGHT 80
+
 #define ARROW_HEIGHT_WIDTH 100
 
 #define TIME_HEIGHT 50
@@ -106,6 +109,15 @@ void placeSprite(int* screen_pointer, Sprite* sp) {
             *(screen_pointer + screenIndex) = pixel;
         }
     }
+}
+
+void makeLevel(Sprite* sp, int level, size_t xPos, size_t yPos) {
+    
+    sp->width = LEVEL_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    
 }
 
 //Modifies sp to be a life bar of the correct width
