@@ -27,8 +27,8 @@
 #define CHAR_WIDTH 50
 #define CHAR_THICK CHAR_WIDTH/4
 
-#define LEVEL_WIDTH 500
-#define LEVEL_HEIGHT 80
+#define LEVEL_WIDTH (CHAR_WIDTH*5 +50)
+#define LEVEL_HEIGHT CHAR_HEIGHT
 #define LEVEL_X_POS 1750
 #define LEVEL_Y_POS 50
 
@@ -59,10 +59,13 @@ typedef struct Sprite Sprite;
 
 struct GameScreen {
     int pixel_arr[SCREEN_WIDTH*SCREEN_HEIGHT];
+    size_t key_seq[20];
     Sprite key_arr[20];
     size_t level;
     size_t size;
-    Sprite level_num;
+    Sprite level_sprite;
+    Sprite level_num_0;
+    Sprite level_num_1;
 
     size_t arrow_index_1;
     size_t arrow_index_2;
@@ -127,12 +130,65 @@ void placeSprite(int* screen_pointer, Sprite* sp) {
     }
 }
 
-void makeLevel(Sprite* sp, int level, size_t xPos, size_t yPos) {
+void makeLevel(Sprite* sp, size_t xPos, size_t yPos) {
     
     sp->width = LEVEL_WIDTH;
     sp->height = LEVEL_HEIGHT;
     sp->x_pos = xPos;
     sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
+
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+
+    size_t row, col,col_temp;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < LEVEL_WIDTH; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+                //Draw 'L'
+                if (col < CHAR_THICK || 
+                    row > LEVEL_HEIGHT - CHAR_THICK) {
+                    setPixelAt(col,row,sp,WHITE);
+                }
+
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                //Draw 'E'
+                if (col_temp < CHAR_THICK ||
+                    row < CHAR_THICK ||
+                    row > LEVEL_HEIGHT - CHAR_THICK ||
+                    (row > LEVEL_HEIGHT/2 - CHAR_THICK /2 && row < LEVEL_HEIGHT/2 + CHAR_THICK/2)) {
+                    setPixelAt(col,row,sp,WHITE);
+                }
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               col_temp = col - letter3_col;
+               //Draw 'V'
+               if ((col_temp >= row/4 && col_temp <=row/4 +CHAR_THICK) ||
+                    (col_temp >= CHAR_WIDTH - row/4-CHAR_THICK && col_temp <= CHAR_WIDTH-row/4)) {
+                setPixelAt(col,row,sp,WHITE);
+               }
+
+            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
+                col_temp = col - letter4_col;
+                if (col_temp < CHAR_THICK ||
+                    row < CHAR_THICK ||
+                    row > LEVEL_HEIGHT - CHAR_THICK ||
+                    (row > LEVEL_HEIGHT/2 - CHAR_THICK /2 && row < LEVEL_HEIGHT/2 + CHAR_THICK/2)) {
+                    setPixelAt(col,row,sp,WHITE);
+                }
+            } else if (col < letter5_col+CHAR_WIDTH && col > letter5_col) {
+                col_temp = col - letter5_col;
+                if (col_temp < CHAR_THICK || 
+                    row > LEVEL_HEIGHT - CHAR_THICK) {
+                    setPixelAt(col,row,sp,WHITE);
+                }
+            }
+        }
+    }
     
 }
 
@@ -318,11 +374,6 @@ void makeTimerMark(Sprite* sp, size_t x_pos, size_t y_pos) {
 
 }
 
-void moveSpriteRight(Sprite* sp) {
-    sp->x_pos++;
-    sp->x_pos++;
-    sp->x_pos++;
-}
 
 void setTimerPos(Sprite* timer_mark, size_t timer_data, size_t timer_max, size_t timer_bar_x_pos) { 
     timer_mark->x_pos = timer_data*TIME_WIDTH/timer_max + timer_bar_x_pos;
@@ -340,11 +391,8 @@ void changeArrowColor(Sprite*sp, int color) {
 }
 
 //////////////////////
-//Make Digit/////
+/// Draw Char /////////
 //////////////////////
-
-/* The screen space assigned for each digit is the same, with
-each character having a method to modify a sprite to show it */
 
 
 void makeOne(Sprite*sp) {
@@ -523,7 +571,7 @@ void makeZero(Sprite* sp) {
 }
 
 
-void makeNum(Sprite*sp, size_t num, size_t x_pos, size_t y_pos) {
+void makeDigit(Sprite*sp, size_t num, size_t x_pos, size_t y_pos) {
     sp->x_pos = x_pos;
     sp->y_pos = y_pos;
     sp->height = CHAR_HEIGHT;
@@ -560,13 +608,89 @@ void makeNum(Sprite*sp, size_t num, size_t x_pos, size_t y_pos) {
             makeNine(sp);
             break;
         case 0:
+            makeZero(sp);
             break;
         default:
             break;
-
-
-
     }
+
+}
+
+void makeNum(Sprite* num_1, Sprite* num_0, size_t level, size_t x_pos, size_t y_pos) {
+    if (level/10 != 0) {
+        makeDigit(num_1,level/10,x_pos,y_pos);
+    }
+
+    makeDigit(num_0,level%10,x_pos+CHAR_WIDTH+10,y_pos);
+
+}
+
+void makeA(Sprite*sp) {
+    size_t row,col;
+    for (row = 0; row < sp-> height; row++) {
+        for (col = 0; col < sp->width; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+        }
+    }
+
+}
+void makeP(Sprite*sp) {
+    size_t row,col;
+    for (row = 0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col ++) {
+            if (col < CHAR_THICK ||
+                row < CHAR_THICK ||
+                (col > sp->width - CHAR_THICK && row < sp->height/2) ||
+                (row > sp->height/2 - CHAR_THICK && row < sp->height/2)) {
+                    setPixelAt(col,row,sp,WHITE);
+            } else {
+                setPixelAt(col,row,sp,BACKGROUND);
+            }
+         }
+     }
+}
+
+void makeChar(Sprite* sp,char c, size_t x_pos,size_t y_pos) {
+    sp->x_pos = x_pos;
+    sp->y_pos = y_pos;
+    sp->height = CHAR_HEIGHT;
+    sp->width = CHAR_WIDTH;
+
+    switch(c) {
+        case 'A':
+            makeA(sp);
+        case 'P':
+            makeP(sp);
+            break;
+        case 'S':
+            makeFive(sp);
+            break;
+        default:
+            break;
+    }
+
+
+}
+
+///////////////////////////////
+//// Updating Screen //////////
+///////////////////////////////
+void makeStartScreen(GameScreen* g) {
+    Sprite sp;
+    makeRightArrow(&sp,SCREEN_WIDTH/2-200,SCREEN_HEIGHT/2-50,BLUE);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeDigit(&sp,5,SCREEN_WIDTH/2-200 + ARROW_HEIGHT_WIDTH + 10, SCREEN_HEIGHT/2-40);
+    placeSprite(g->pixel_arr,&sp);
+    //free(sp.pixel_arr);
+
+    makeChar(&sp,'P',SCREEN_WIDTH/2-80 + CHAR_WIDTH,SCREEN_HEIGHT/2-40);
+    placeSprite(g->pixel_arr,&sp);
+    //free(sp.pixel_arr);
+
+    makeChar(&sp,'A',SCREEN_WIDTH/2-70 + 2*CHAR_WIDTH, SCREEN_HEIGHT/2-40);
+    placeSprite(g->pixel_arr,&sp);
 
 }
 void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
@@ -603,7 +727,9 @@ void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
           makeTimerMark(&(g->timer_mark_1),x_pos,y_pos);
           break;
         case LEVEL:
-          makeNum(&(g->level_num),g->level,LEVEL_X_POS,LEVEL_Y_POS);
+          makeNum(&(g->level_num_1),&(g->level_num_0),g->level,LEVEL_X_POS,LEVEL_Y_POS);
+          makeLevel(&(g->level_sprite),LEVEL_X_POS-LEVEL_WIDTH-15,LEVEL_Y_POS);
+          break;
 
     }
 }
@@ -613,7 +739,9 @@ void updateGameScreenSinglePlayer(GameScreen * g)
     placeSprite(g->pixel_arr,&(g->life_bar_1));
     placeSprite(g->pixel_arr,&(g->timer_bar_1));
     placeSprite(g->pixel_arr,&(g->timer_mark_1));
-    placeSprite(g->pixel_arr,&(g->level_num));
+    placeSprite(g->pixel_arr,&(g->level_num_1));
+    placeSprite(g->pixel_arr,&(g->level_num_0));
+    placeSprite(g->pixel_arr,&(g->level_sprite));
 
     size_t i;
     for (i = 0; i < g->size; i++) {
@@ -621,12 +749,6 @@ void updateGameScreenSinglePlayer(GameScreen * g)
     }
 }
 
-int levelOver(GameScreen * g)
-{
-    Sprite timer_mark = g->timer_mark_1;
-    Sprite timer_bar = g->timer_bar_1;
-    return ((timer_mark.x_pos + timer_mark.width) > timer_bar.x_pos + timer_bar.width); 
-}
 
 void resetKeys(GameScreen *g) {
     size_t i;
@@ -641,6 +763,12 @@ void clearSprites(GameScreen *g) {
     free(g->timer_mark_1.pixel_arr);
     free(g->timer_bar_1.pixel_arr);
     free(g->life_bar_1.pixel_arr);
+    if (g->level > 9) {
+        free(g->level_num_1.pixel_arr);
+    }
+    free(g->level_num_0.pixel_arr);
+    //free(g->level_sprite.pixel_arr);
+
     size_t i;
     for (i = 0; i < g->size; i++) {
         free(g->key_arr[i].pixel_arr);
@@ -649,6 +777,10 @@ void clearSprites(GameScreen *g) {
     g->arrow_index_1 = 0;
     g->size = 0;
 }
+
+//////////////////////////////////////
+//// Setup and Teardown Framebuffer///
+//////////////////////////////////////
 
 int setUpFrameBuffer(int **fbp, long int *screensize_in_int, int* fbfd) {
   struct fb_var_screeninfo vinfo;

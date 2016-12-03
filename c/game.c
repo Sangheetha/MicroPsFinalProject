@@ -72,18 +72,17 @@ int main(int argc, char* argv[]) {
 
   int not_close_game = 1;
     
-  //Before start screen is made, we start with p1 game
   next_state = START_SCREEN;
+  clearContents(screen.pixel_arr,screensize_in_int);
 
   while(not_close_game) {
     game_state  = next_state;
-
     switch(game_state)
     {   
         case START_SCREEN:
-           makeNum(&sp,5,800,500); 
-           placeSprite(screen.pixel_arr,&sp);
-           start = getStartInfo(&screen);
+           printf("doing some stuff\n");
+           makeStartScreen(&screen);
+           //start = getStartInfo(&screen);
            next_state = (start == 0)?INIT_LEVEL_ONE:START_SCREEN;
            break;
         case INIT_LEVEL_ONE:
@@ -91,6 +90,7 @@ int main(int argc, char* argv[]) {
             clearContents(screen.pixel_arr,screensize_in_int); 
             //start = getLevelInfo(&screen);
             start = sendKeySequence(&screen,key_seq);
+            screen.level = 53;
                 printf("Initializing a level: %d\n",screen.level);
             if (start == -1) {
                 next_state = DEATH_SCREEN_ONE;
@@ -143,8 +143,10 @@ int main(int argc, char* argv[]) {
             break;
         default:
             break;
-   } 
+   }
+   printf("going to update screen");
    updateScreen(fbp,screen.pixel_arr,screensize_in_int);
+   while(1);
    count++;
   }
   // cleanup
