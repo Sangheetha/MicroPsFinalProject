@@ -557,6 +557,7 @@ void makeNum(Sprite*sp, size_t num, size_t x_pos, size_t y_pos) {
             makeEight(sp);
             break;
         case 9:
+            makeNine(sp);
             break;
         case 0:
             break;
