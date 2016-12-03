@@ -15,6 +15,7 @@
 #define GREEN 0x42f450
 #define RED 0xff3300
 #define YELLOW 0xffd400
+#define BACKGROUND BLACK
 
 #define LIFE_BAR_HEIGHT 75
 #define LIFE_BAR_MAX_WIDTH 400
@@ -22,21 +23,28 @@
 #define LIFE_BAR_X_POS 100
 #define LIFE_BAR_Y_POS 50
 
+#define CHAR_HEIGHT 75
+#define CHAR_WIDTH 50
+#define CHAR_THICK CHAR_WIDTH/4
+
 #define LEVEL_WIDTH 500
 #define LEVEL_HEIGHT 80
+#define LEVEL_X_POS 1750
+#define LEVEL_Y_POS 50
 
 #define ARROW_HEIGHT_WIDTH 100
 
 #define TIME_HEIGHT 50
 #define TIME_WIDTH 450
 
-#define LIFE_BAR 0
+#define LIFE_BAR_1 0
 #define RIGHT_ARROW 4
 #define LEFT_ARROW 3
 #define DOWN_ARROW 2
 #define UP_ARROW 1
-#define TIMER_BAR 5
-#define TIMER_MARK 6
+#define TIMER_BAR_1 5
+#define TIMER_MARK_1 6
+#define LEVEL 7
 #define INVALID_SPRITE 0xF
 
 struct Sprite {
@@ -54,11 +62,19 @@ struct GameScreen {
     Sprite key_arr[20];
     size_t level;
     size_t size;
-    size_t arrow_index;
+    Sprite level_num;
+
+    size_t arrow_index_1;
+    size_t arrow_index_2;
     int life_1;
+    int life_2;
     Sprite timer_bar_1;
     Sprite timer_mark_1;
     Sprite life_bar_1;
+    Sprite timer_bar_2;
+    Sprite timer_mark_2;
+    Sprite life_bar_2;
+    
 };
 
 typedef struct GameScreen GameScreen;
@@ -308,6 +324,10 @@ void moveSpriteRight(Sprite* sp) {
     sp->x_pos++;
 }
 
+void setTimerPos(Sprite* timer_mark, size_t timer_data, size_t timer_max, size_t timer_bar_x_pos) { 
+    timer_mark->x_pos = timer_data*TIME_WIDTH/timer_max + timer_bar_x_pos;
+}
+
 void changeArrowColor(Sprite*sp, int color) {
     size_t row, col;
     for (row = 0; row < sp->height; row++) {
@@ -317,9 +337,237 @@ void changeArrowColor(Sprite*sp, int color) {
              }
         }
     }
-
 }
 
+//////////////////////
+//Make Digit/////
+//////////////////////
+
+/* The screen space assigned for each digit is the same, with
+each character having a method to modify a sprite to show it */
+
+
+void makeOne(Sprite*sp) {
+    size_t row, col;
+    for (row = 0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col++) {
+            if (col > sp->width - CHAR_THICK) {
+                setPixelAt(col,row,sp,WHITE);
+            } else {
+                setPixelAt(col,row,sp,BACKGROUND);
+            }
+        }
+    }
+}
+
+void makeTwo(Sprite* sp) {
+    size_t row, col;
+
+    for (row = 0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col ++) {
+            if (row < CHAR_THICK || 
+                (row <= sp->height/2 + CHAR_THICK/2 && row >= sp->height/2 - CHAR_THICK/2) ||
+                row > sp->height - CHAR_THICK)
+            {
+                setPixelAt(col,row,sp,WHITE);
+
+            } else if ((row < sp->height/2 - CHAR_THICK/2 && col > sp->width-CHAR_THICK) ||
+                       (row > sp->height/2 + CHAR_THICK/2 && col < CHAR_THICK))
+              {
+                setPixelAt(col,row,sp,WHITE);
+              } else {
+                 setPixelAt(col,row,sp,BACKGROUND);
+              }
+        }
+   }
+}
+
+void makeThree(Sprite* sp) {
+    size_t row, col;
+
+    for (row = 0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col ++) {
+            if (row < CHAR_THICK || 
+                (row <= sp->height/2 + CHAR_THICK/2 && row >= sp->height/2 - CHAR_THICK/2) ||
+                row > sp->height - CHAR_THICK || 
+                col > sp->width - CHAR_THICK)
+            {
+                setPixelAt(col,row,sp,WHITE);
+            } else {
+                setPixelAt(col,row,sp,BACKGROUND);
+            }
+         }
+     }
+}
+
+void makeFour(Sprite* sp) {
+     size_t row, col;
+
+    for (row = 0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col ++) {
+            if (col > sp->width - CHAR_THICK ||
+                (row < sp->height/2 + CHAR_THICK/2 && row > sp->height/2 - CHAR_THICK/2) ||
+                (col < CHAR_THICK && row < sp->height/2))
+            {
+                setPixelAt(col,row,sp,WHITE);
+            } else {
+                setPixelAt(col,row,sp,BACKGROUND);
+             }
+        }
+    }
+}
+
+void makeFive(Sprite* sp) {
+    size_t row, col;
+
+    for (row=0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col++) {
+            if (row < CHAR_THICK ||
+                (row < sp->height/2 + CHAR_THICK/2 && row > sp->height/2 - CHAR_THICK/2) ||
+                row > sp->height - CHAR_THICK ||
+                (row < sp->height/2 && col < CHAR_THICK) ||
+                (row > sp->height/2 && col > sp->width - CHAR_THICK)) {
+
+                setPixelAt(col,row,sp,WHITE);
+             } else {
+                setPixelAt(col,row,sp,BACKGROUND);
+               }
+         }
+     }
+}
+
+void makeSix(Sprite* sp) {
+    size_t row, col;
+    for (row = 0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col++) {
+            if (col < CHAR_THICK ||
+                row < CHAR_THICK ||
+                (row < sp->height/2 + CHAR_THICK/2 && row > sp->height/2 - CHAR_THICK/2) ||
+                row > sp->height - CHAR_THICK ||
+                (row > sp->height/2 && col > sp->width - CHAR_THICK)) {
+
+                setPixelAt(col,row,sp,WHITE);
+             } else {
+                setPixelAt(col,row,sp,BACKGROUND);
+            }
+        }
+    }
+}
+
+void makeSeven(Sprite* sp) {
+    size_t row,col;
+    for (row=0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col++) {
+        if (col > sp->width - CHAR_THICK ||
+            row < CHAR_THICK) {
+
+            setPixelAt(col,row,sp,WHITE);
+        } else {
+            setPixelAt(col,row, sp, BACKGROUND);
+         }
+       }
+    }
+}
+
+void makeEight(Sprite* sp) {
+    size_t row, col;
+    for (row = 0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col++) {
+            if (col < CHAR_THICK ||
+                col > sp->width - CHAR_THICK ||
+                row < CHAR_THICK ||
+                row > sp->height - CHAR_THICK ||
+                (row < sp->height/2 + CHAR_THICK/2 && row > sp->height/2 - CHAR_THICK/2)) {
+
+                setPixelAt(col,row,sp,WHITE);
+           } else {
+                setPixelAt(col,row,sp,BACKGROUND);
+          }
+        }
+    }
+}
+
+void makeNine(Sprite* sp) {
+    size_t row, col;
+    for (row = 0; row < sp->height; row++) {
+        for (col = 0; col < sp->width; col ++) {
+            if (row < CHAR_THICK ||
+                row > sp->height - CHAR_THICK ||
+                (row > sp->height/2 - CHAR_THICK/2 && row < sp->height/2 + CHAR_THICK/2) ||
+                (row < sp->height/2 && col < CHAR_THICK) ||
+                col > sp->width - CHAR_THICK) 
+            {
+                setPixelAt(col,row,sp,WHITE);
+            } else {
+                setPixelAt(col,row,sp,BACKGROUND);
+            }
+        }
+    }
+}
+
+void makeZero(Sprite* sp) {
+    size_t row, col;
+    for (row = 0; row < sp->height; row ++) {
+        for (col = 0; col < sp->width; col++) {
+            if (col < CHAR_THICK ||
+                col > sp->width - CHAR_THICK ||
+                row < CHAR_THICK ||
+                row > sp->height - CHAR_THICK) {
+
+                setPixelAt(col,row,sp,WHITE);
+             } else {
+                setPixelAt(col,row,sp,BACKGROUND);
+             }
+        }
+    }
+}
+
+
+void makeNum(Sprite*sp, size_t num, size_t x_pos, size_t y_pos) {
+    sp->x_pos = x_pos;
+    sp->y_pos = y_pos;
+    sp->height = CHAR_HEIGHT;
+    sp->width = CHAR_WIDTH;
+
+    sp->pixel_arr = (int*) malloc(sp->height*sp->width*sizeof(int));
+
+    switch(num) {
+        case 1:
+            makeOne(sp);
+            break;
+        case 2:
+            makeTwo(sp);
+            break;
+        case 3:
+            makeThree(sp);
+            break;
+        case 4:
+            makeFour(sp);
+            break;
+        case 5:
+            makeFive(sp);
+            break;
+        case 6:
+            makeSix(sp);
+            break;
+        case 7:
+            makeSeven(sp);
+            break;
+        case 8:
+            makeEight(sp);
+            break;
+        case 9:
+            break;
+        case 0:
+            break;
+        default:
+            break;
+
+
+
+    }
+
+}
 void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
     
     Sprite sp;
@@ -328,7 +576,7 @@ void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
     switch(sprite_name) {
         case INVALID_SPRITE:
           break;
-        case LIFE_BAR:
+        case LIFE_BAR_1:
           makeLifeBar(&(g->life_bar_1),g->life_1);
           break;
         case RIGHT_ARROW:
@@ -347,12 +595,15 @@ void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
           makeUpArrow(&keys[numKeys],x_pos,y_pos,BLUE);
           g->size++;
           break;
-        case TIMER_BAR:
+        case TIMER_BAR_1:
           makeTimerBar(&(g->timer_bar_1),x_pos,y_pos);
           break;
-        case TIMER_MARK:
+        case TIMER_MARK_1:
           makeTimerMark(&(g->timer_mark_1),x_pos,y_pos);
           break;
+        case LEVEL:
+          makeNum(&(g->level_num),g->level,LEVEL_X_POS,LEVEL_Y_POS);
+
     }
 }
 
@@ -361,6 +612,8 @@ void updateGameScreenSinglePlayer(GameScreen * g)
     placeSprite(g->pixel_arr,&(g->life_bar_1));
     placeSprite(g->pixel_arr,&(g->timer_bar_1));
     placeSprite(g->pixel_arr,&(g->timer_mark_1));
+    placeSprite(g->pixel_arr,&(g->level_num));
+
     size_t i;
     for (i = 0; i < g->size; i++) {
         placeSprite(g->pixel_arr,&(g->key_arr[i]));
@@ -376,24 +629,23 @@ int levelOver(GameScreen * g)
 
 void resetKeys(GameScreen *g) {
     size_t i;
-    for (i = 0; i <= g->arrow_index; i++) {
+    for (i = 0; i <= g->arrow_index_1; i++) {
         changeArrowColor(&(g->key_arr[i]),BLUE);
     }
 
-    g->arrow_index = 0;
+    g->arrow_index_1 = 0;
 }
 
 void clearSprites(GameScreen *g) {
     free(g->timer_mark_1.pixel_arr);
     free(g->timer_bar_1.pixel_arr);
     free(g->life_bar_1.pixel_arr);
-    
     size_t i;
     for (i = 0; i < g->size; i++) {
         free(g->key_arr[i].pixel_arr);
     }
 
-    g->arrow_index = 0;
+    g->arrow_index_1 = 0;
     g->size = 0;
 }
 
