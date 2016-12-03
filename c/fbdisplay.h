@@ -519,6 +519,7 @@ void makeSeven(Sprite* sp) {
 
 void makeEight(Sprite* sp) {
     size_t row, col;
+
     for (row = 0; row < sp->height; row++) {
         for (col = 0; col < sp->width; col++) {
             if (col < CHAR_THICK ||
@@ -626,14 +627,56 @@ void makeNum(Sprite* num_1, Sprite* num_0, size_t level, size_t x_pos, size_t y_
 }
 
 void makeA(Sprite*sp) {
-    size_t row,col;
+    size_t row,col,row_inv;
     for (row = 0; row < sp-> height; row++) {
         for (col = 0; col < sp->width; col++) {
             setPixelAt(col,row,sp,BACKGROUND);
+            row_inv = sp->height - row - 1;
+            if ((col >= row_inv/5 && col <=row_inv/5 + CHAR_THICK) ||
+                (col >= CHAR_WIDTH - row_inv/5 - CHAR_THICK && col <= CHAR_WIDTH-row_inv/5) ||
+                (row < sp->height/2 + CHAR_THICK && row > sp->height/2 && col > CHAR_THICK + row_inv/5 && col < CHAR_WIDTH-row_inv/5)) {
+                setPixelAt(col,row,sp,WHITE);
+            }
         }
     }
 
 }
+
+void makeC(Sprite* sp) {
+   size_t row, col;
+   for (row=0; row < sp->height; row++) {
+    for (col = 0; col < sp->width; col++) {
+        setPixelAt(col,row,sp,BACKGROUND);
+
+        if (col < CHAR_THICK ||
+            row < CHAR_THICK ||
+            row > sp->height - CHAR_THICK) {
+            setPixelAt(col,row,sp,WHITE);
+        }
+    }
+  }
+}
+
+void makeE(Sprite* sp) {
+    size_t row,col;
+    for (row=0; row < sp->height;row++){
+        for (col = 0; col < sp->width; col++) {
+        setPixelAt(col,row,sp,BACKGROUND);
+
+        if (col < CHAR_THICK ||
+            row < CHAR_THICK ||
+            row > sp->height - CHAR_THICK ||
+            (row < sp->height/2 + CHAR_THICK/2 && row > sp->height/2 - CHAR_THICK/2)) {
+            setPixelAt(col,row,sp,WHITE);
+        } 
+       }
+    }
+}
+
+void makeL(Sprite* sp) {
+   //TODO:Write this
+}
+
 void makeP(Sprite*sp) {
     size_t row,col;
     for (row = 0; row < sp->height; row++) {
@@ -650,20 +693,44 @@ void makeP(Sprite*sp) {
      }
 }
 
+void makeR(Sprite*sp) {
+    //TODO:write this
+}
+void makeY(Sprite *sp) {
+    //TODO: write this
+}
+
 void makeChar(Sprite* sp,char c, size_t x_pos,size_t y_pos) {
     sp->x_pos = x_pos;
     sp->y_pos = y_pos;
     sp->height = CHAR_HEIGHT;
     sp->width = CHAR_WIDTH;
+    sp->pixel_arr = (int*) malloc(CHAR_HEIGHT*CHAR_WIDTH*sizeof(int));
 
     switch(c) {
         case 'A':
             makeA(sp);
+            break;
+        case 'C':
+            makeC(sp);
+            break;
+        case 'E':
+            makeE(sp);
+            break;
+        case 'L':
+            makeL(sp);
+            break;
         case 'P':
             makeP(sp);
             break;
+        case 'R':
+            makeR(sp);
+            break;
         case 'S':
             makeFive(sp);
+            break;
+        case 'Y':
+            makeY(sp);
             break;
         default:
             break;
@@ -677,20 +744,34 @@ void makeChar(Sprite* sp,char c, size_t x_pos,size_t y_pos) {
 ///////////////////////////////
 void makeStartScreen(GameScreen* g) {
     Sprite sp;
-    makeRightArrow(&sp,SCREEN_WIDTH/2-200,SCREEN_HEIGHT/2-50,BLUE);
+    makeRightArrow(&sp,SCREEN_WIDTH/2-200,SCREEN_HEIGHT/2-120,BLUE);
     placeSprite(g->pixel_arr,&sp);
     free(sp.pixel_arr);
 
-    makeDigit(&sp,5,SCREEN_WIDTH/2-200 + ARROW_HEIGHT_WIDTH + 10, SCREEN_HEIGHT/2-40);
+    makeDigit(&sp,5,SCREEN_WIDTH/2-200 + ARROW_HEIGHT_WIDTH + 10, SCREEN_HEIGHT/2-110);
     placeSprite(g->pixel_arr,&sp);
-    //free(sp.pixel_arr);
+    free(sp.pixel_arr);
 
-    makeChar(&sp,'P',SCREEN_WIDTH/2-80 + CHAR_WIDTH,SCREEN_HEIGHT/2-40);
+    makeChar(&sp,'P',SCREEN_WIDTH/2-80 + CHAR_WIDTH,SCREEN_HEIGHT/2-110);
     placeSprite(g->pixel_arr,&sp);
-    //free(sp.pixel_arr);
+    free(sp.pixel_arr);
 
-    makeChar(&sp,'A',SCREEN_WIDTH/2-70 + 2*CHAR_WIDTH, SCREEN_HEIGHT/2-40);
+    makeChar(&sp,'A',SCREEN_WIDTH/2-75 + 2*CHAR_WIDTH, SCREEN_HEIGHT/2-110);
     placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeChar(&sp,'C',SCREEN_WIDTH/2-65 + 3*CHAR_WIDTH, SCREEN_HEIGHT/2-110);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeChar(&sp,'E',SCREEN_WIDTH/2-55 + 4*CHAR_WIDTH, SCREEN_HEIGHT/2-110);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeChar(&sp,'P',SCREEN_WIDTH/2, SCREEN_HEIGHT/2+60);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
 
 }
 void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
