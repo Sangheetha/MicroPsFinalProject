@@ -28,8 +28,8 @@
 int getStartInfo(GameScreen *);
 int getLevelInfoOne(GameScreen *);
 int getLevelInfoTwo(GameScreen *);
-int keyMatch(size_t *, GameScreen *);
-void generateKeys(GameScreen *, size_t *, size_t);
+void keyMatch(size_t *, GameScreen *);
+void generateKeys(GameScreen *, size_t);
 int sendKeySequenceOne(GameScreen *);
 int sendKeySequenceTwo(GameScreen *); 
 
@@ -51,14 +51,15 @@ int main(int argc, char* argv[]) {
   long int screensize_in_int;
   setUpFrameBuffer(&fbp,&screensize_in_int, &fbfd);
   
+
+  srand(time(NULL));
   int game_state;
   int next_state;
-  Sprite sp; 
   int level;
   GameScreen screen;
-  screen.key_seq[0] = 3;
-  screen.key_seq[1] = 3;
-  screen.key_seq[2] = 0x3;
+  screen.key_seq[0] = 0xF;
+  screen.key_seq[1] = 0xF;
+  screen.key_seq[2] = 0xF;
   screen.key_seq[3] = 0xF;
   screen.key_seq[4] = 0xF;
   screen.key_seq[5] = 0xF;//0x1;
@@ -72,17 +73,18 @@ int main(int argc, char* argv[]) {
   screen.key_seq[13] = 0xF;
   screen.key_seq[14] = 0xF;
   screen.key_seq[15] = 0xF;
-  intializeScreen(&screen);
+  initializeScreen(&screen);
 
   printf("before whilei\n");
 
   size_t timer_data;
   int timer_count;
   int start;
+  Sprite sp;
 
   int not_close_game = 1;
     
-  next_state = START_SCREEN ;
+  next_state = START_SCREEN;
   clearContents(screen.pixel_arr,screensize_in_int);
 
   while(not_close_game) {
@@ -90,6 +92,7 @@ int main(int argc, char* argv[]) {
     switch(game_state)
     {   
         case START_SCREEN:
+           clearContents(screen.pixel_arr,screensize_in_int);
            makeStartScreen(&screen);
            next_state = getStatusInfo(&screen);
            break;
@@ -98,6 +101,7 @@ int main(int argc, char* argv[]) {
             //Initialize level for one-player
             clearContents(screen.pixel_arr,screensize_in_int); 
             //start = getLevelInfoOne(&screen);
+            generateKeys(&screen, 7);
             start = sendKeySequenceOne(&screen);
             printf("Initializing a level: %d\n",screen.level);
             if (start == -1) {
@@ -113,7 +117,7 @@ int main(int argc, char* argv[]) {
             //Check if the level is over, whether a wrong/correct button was
             //pressed.
             keyMatch(&timer_data,&screen);
-            setTimerPos(&(screen.timer_mark_1), timer_data, TIMER_MAX, 300);
+            setTimerPos(&(screen.timer_mark_1), timer_data, TIMER_MAX, TIME_1_X_POS);
             if (timer_data > 0xF7000 | screen.life_1 == 0) {
                 clearSprites(&screen);
                 printf("%x\n",timer_data);
@@ -136,18 +140,58 @@ int main(int argc, char* argv[]) {
             screen.mode = 2;
             //Initialize level for two players
             clearContents(screen.pixel_arr,screensize_in_int);
+            generateKeys(&screen, 7);
             start = sendKeySequenceTwo(&screen);
+            if (start == -1) {
+                next_state = DEATH_SCREEN_TWO;
+                break;
+            }
+            initializeLevelTwo(&screen);
+            updateGameScreenTwoPlayer(&screen);
             next_state = PLAY_LEVEL_TWO;
             break;
         case PLAY_LEVEL_TWO:
-            makeChar(&sp,'A',500,500);
-            placeSprite(screen.pixel_arr,&sp);
+            keyMatch(&timer_data,&screen);
+            setTimerPos(&(screen.timer_mark_1),timer_data,TIMER_MAX,TIME_1_X_POS);
+            setTimerPos(&(screen.timer_mark_2),timer_data,TIMER_MAX, TIME_2_X_POS);
+            
+            //If timer is up or a player died, go back to init state
+            if (timer_data > 0xF7000 | screen.life_1 == 0 | screen.life_2 == 0) {
+                clearSprites(&screen);
+                printf("%x\n",timer_data);
+                next_state = INIT_LEVEL_TWO;
+                screen.key_seq[0] = ((screen.key_seq[0] + 1)%4) + 1;
+                break;
+            } else {
+                // Else, check key press data to update screen.
+
+                if (screen.correct_key_1) {
+                    if (screen.arrow_index_1 < screen.size) {
+                        changeArrowColor(&(screen.key_arr_1[screen.arrow_index_1]),GREEN);
+                        screen.arrow_index_1++;
+                    }
+                } else if (screen.wrong_key_1) {
+                    resetKeys(&screen,1);
+                }
+                if (screen.correct_key_2) {
+                    if (screen.arrow_index_2 < screen.size) {
+                        changeArrowColor(&(screen.key_arr_2[screen.arrow_index_2]),GREEN);
+                        screen.arrow_index_2++;
+                    }
+                } else if (screen.wrong_key_2) {
+                    resetKeys(&screen,2);
+                }
+            }
+            updateGameScreenTwoPlayer(&screen);
             break;
         case DEATH_SCREEN_ONE:
             clearContents(screen.pixel_arr,screensize_in_int);
             next_state = getStatusInfo(&screen);
             break;
         case DEATH_SCREEN_TWO:
+            clearContents(screen.pixel_arr,screensize_in_int);
+            makeDigit(&sp,screen.winner,500,500);
+            placeSprite(screen.pixel_arr,&sp);
             next_state = getStatusInfo(&screen);
             break;
         default:
@@ -208,7 +252,7 @@ int getStatusInfo(GameScreen *g) {
     }
 
 }
-
+/*
 int getLevelInfoOne(GameScreen *g) {
     
     char death_life_level;
@@ -225,10 +269,10 @@ int getLevelInfoOne(GameScreen *g) {
     spiSendReceive(0);
     spiSendReceive(0);
 
-    /*spiSendReceive(0);
+    *spiSendReceive(0);
     spiSendReceive(0);
     spiSendReceive(0);
-    spiSendReceive(0);*/
+    spiSendReceive(0);
 
 
     digitalWrite(LOAD_PIN,0);
@@ -260,13 +304,10 @@ int getLevelInfoOne(GameScreen *g) {
 
     return 0;
 }
-
-int keyMatch(size_t * timer_data, GameScreen * g) {
+*/
+void keyMatch(size_t * timer_data, GameScreen * g) {
 
    char match_timer_info, timer_info_1, timer_info_2, life_info;
-
-   char opcode = KEY_MATCH_OPCODE;
-   int level;
  
    digitalWrite(LOAD_PIN, 1);
     
@@ -290,30 +331,34 @@ int keyMatch(size_t * timer_data, GameScreen * g) {
    match_timer_info = spiSendReceive(0);
    timer_info_1 = spiSendReceive(0);
    timer_info_2 = spiSendReceive(0);
-
+   
    g->correct_key_1 = (match_timer_info >> 7)&0x1;
    g->wrong_key_1 = (match_timer_info >> 6)&0x1;
+   g->correct_key_2 = (match_timer_info >> 5)&0x1;
+   g->wrong_key_2 = (match_timer_info >> 4)&0x1;
+
    g->life_1 = (life_info >>4)&0x7;
+  g->life_2 = life_info&0x7;
 
 
    *timer_data = ((match_timer_info & 0xF) << 16) | (timer_info_1 << 8) | timer_info_2;
-   return level;
 }
 
-void generateKeys(GameScreen * g, size_t * key_seq, size_t numKeys) {
+void generateKeys(GameScreen * g , size_t numKeys) {
     size_t i,rand_key;
-    srand(time(NULL));
     for (i = 0; i < numKeys; i++) {
-        rand_key = (rand()%4);
+        rand_key = (rand()%4) + 1;
+        g->key_seq[i] = rand_key;
     } 
-    for (; i < 20; i++) {
+    for (; i < MAX_KEYS; i++) {
         rand_key = 0xF;
+        g->key_seq[i] = rand_key;
     }
 
 }
 
 int sendKeySequenceOne(GameScreen* g) {
-    char death_life_level,message;
+    char death_life,message,level;
     int current_key;
     int key_y,line_num;
 
@@ -328,25 +373,25 @@ int sendKeySequenceOne(GameScreen* g) {
     digitalWrite(LOAD_PIN, 0);
 
     while(!digitalRead(DONE_PIN));
-    death_life_level = spiSendReceive(0);
+    death_life = spiSendReceive(0);
 
-    spiSendReceive(0);
+    level = spiSendReceive(0);
     spiSendReceive(0);
     spiSendReceive(0);
    
-    g->life_1 = (death_life_level >> 4)&0x7; //Extract life
-
+    g->life_1 = (death_life >> 4)&0x7; //Extract life
+ 
     if (g->life_1 == 0) {
         return -1;
     }
-    g->level = death_life_level&0xF; //Extract level
+    g->level = level; //Extract level
     
     for (i = 0; i < MAX_KEYS; i++) {
         current_key = g->key_seq[i];
         if (current_key != 0xF) {
             key_y = (i < 7)? 500: 610;
             line_num = i%7;
-            addSpriteToGame(current_key, g, 300 + line_num*110, key_y);
+            addSpriteToGame(current_key, g, TIME_1_X_POS + line_num*110, key_y);
         } else {
             break;
          }
@@ -356,8 +401,8 @@ int sendKeySequenceOne(GameScreen* g) {
 }
  
 int sendKeySequenceTwo(GameScreen* g) {
-    char death_life_level,message;
-    int current_key;
+    char death_life,message,level;
+    int current_key, key_y, line_num;
     
     digitalWrite(LOAD_PIN, 1);
     spiSendReceive(0x10);
@@ -370,28 +415,34 @@ int sendKeySequenceTwo(GameScreen* g) {
     digitalWrite(LOAD_PIN, 0);
 
     while(!digitalRead(DONE_PIN));
-    death_life_level = spiSendReceive(0);
+    death_life = spiSendReceive(0);
 
-    spiSendReceive(0);
+    level = spiSendReceive(0);
     spiSendReceive(0);
     spiSendReceive(0);
    
-    g->life_1 = (death_life_level >> 4)&0x7; 
-    g->life_2 = death_life_level&0x7;
-
+    g->life_1 = (death_life >> 4)&0x7; 
+    g->life_2 = death_life&0x7;
     //If either player has died, we return
-    if (g->life_1 == 0) {
+    if (g->life_1 == 0 && g->life_2 == 0) {
+        g->winner = 0;
         return -1;
     } else if (g->life_2 == 0) {
-        return -2;
+        g->winner = 1;
+        return -1;
+    } else if (g->life_1 == 0) {
+        g->winner = 2;
+        return -1;
     }
 
-    g->level = death_life_level&0xF; //Extract level
+    g->level = level; //Extract level
     
     for (i = 0; i < MAX_KEYS; i++) {
         current_key = g->key_seq[i];
         if (current_key != 0xF) {
-            addSpriteToGame(current_key, g, 300 + i*110, 500);
+            key_y = (i < 5)? 500: 610;
+            line_num = i%5;
+            addSpriteToGame(current_key, g, TIME_1_X_POS + line_num*110, key_y);
         } else {
             break;
          }
