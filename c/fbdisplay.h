@@ -60,28 +60,43 @@ typedef struct Sprite Sprite;
 struct GameScreen {
     int pixel_arr[SCREEN_WIDTH*SCREEN_HEIGHT];
     size_t key_seq[20];
-    Sprite key_arr[20];
     size_t level;
     size_t size;
+    int winner;
+    int mode;
+    int key_src;
     Sprite level_sprite;
     Sprite level_num_0;
     Sprite level_num_1;
 
     size_t arrow_index_1;
-    size_t arrow_index_2;
+    int correct_key_1;
+    int wrong_key_1;
     int life_1;
-    int life_2;
     Sprite timer_bar_1;
     Sprite timer_mark_1;
     Sprite life_bar_1;
+    Sprite key_arr_1[20];
+    
+    size_t arrow_index_2;
+    int correct_key_2;
+    int wrong_key_2;
+    int life_2;
     Sprite timer_bar_2;
     Sprite timer_mark_2;
     Sprite life_bar_2;
-    
+    Sprite key_arr_2[20];
 };
 
 typedef struct GameScreen GameScreen;
 
+
+void intializeScreen(GameScreen *g) {
+    g->size = 0;
+    g->arrow_index_1 = 0;
+    g->arrow_index_2 = 0;
+    g->winner = 0;
+}
 
 void clearContents(int *fbp, long int screensize_int) {
 
@@ -362,21 +377,14 @@ void makeTimerMark(Sprite* sp, size_t x_pos, size_t y_pos) {
 
     for (row = 0; row < sp->height; row++) {
         for (col = 0; col < sp->width; col++) {
-           if ((col < sp->width/2 - row ||
-                col > sp->width/2 + row ) && row < 6) {
-                setPixelAt(col,row,sp,BLACK);
-           } else if (!(row > sp->width/2 &&
-                        (col < sp->width/4 || col > 3*sp->width/4))) {
-                setPixelAt(col,row,sp,BLUE);
-           }
+           setPixelAt(col,row,sp,BLUE);
         }
      } 
-
 }
 
 
 void setTimerPos(Sprite* timer_mark, size_t timer_data, size_t timer_max, size_t timer_bar_x_pos) { 
-    timer_mark->x_pos = timer_data*TIME_WIDTH/timer_max + timer_bar_x_pos;
+    timer_mark->x_pos = ((timer_data*1.0)/timer_max)*TIME_WIDTH + timer_bar_x_pos;
 }
 
 void changeArrowColor(Sprite*sp, int color) {
@@ -774,11 +782,17 @@ void makeStartScreen(GameScreen* g) {
 
 
 }
+
+
+
 void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
     
     Sprite sp;
-    Sprite* keys = g->key_arr;
+    Sprite* keys_1 = g->key_arr_1;
+    Sprite* keys_2 = g->key_arr_2;
+
     size_t numKeys = g->size;
+
     switch(sprite_name) {
         case INVALID_SPRITE:
           break;
@@ -786,19 +800,23 @@ void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
           makeLifeBar(&(g->life_bar_1),g->life_1);
           break;
         case RIGHT_ARROW:
-          makeRightArrow(&keys[numKeys],x_pos, y_pos,BLUE);
+          makeRightArrow(&keys_1[numKeys],x_pos, y_pos,BLUE);
+          makeRightArrow(&keys_2[numKeys],x_pos, y_pos,BLUE);
           g->size++;
           break;
         case LEFT_ARROW:
-          makeLeftArrow(&keys[numKeys],x_pos,y_pos,BLUE);
+          makeLeftArrow(&keys_1[numKeys],x_pos,y_pos,BLUE);
+          makeLeftArrow(&keys_2[numKeys],x_pos,y_pos,BLUE);
           g->size++;
           break;
         case DOWN_ARROW:
-          makeDownArrow(&keys[numKeys],x_pos,y_pos,BLUE);
+          makeDownArrow(&keys_1[numKeys],x_pos,y_pos,BLUE);
+          makeDownArrow(&keys_2[numKeys],x_pos,y_pos,BLUE);
           g->size++;
           break;
         case UP_ARROW:
-          makeUpArrow(&keys[numKeys],x_pos,y_pos,BLUE);
+          makeUpArrow(&keys_1[numKeys],x_pos,y_pos,BLUE);
+          makeUpArrow(&keys_2[numKeys],x_pos,y_pos,BLUE);
           g->size++;
           break;
         case TIMER_BAR_1:
@@ -815,26 +833,40 @@ void addSpriteToGame(int sprite_name,GameScreen* g, int x_pos, int y_pos) {
     }
 }
 
+void initializeLevel(GameScreen * g) {
+
+    addSpriteToGame(LIFE_BAR_1,g,0,0); 
+    addSpriteToGame(LEVEL,g,1000,50);
+    addSpriteToGame(TIMER_BAR_1,g,300,430);
+    addSpriteToGame(TIMER_MARK_1,g,300,430);
+}
+
 void updateGameScreenSinglePlayer(GameScreen * g) 
 {
+    addSpriteToGame(LIFE_BAR_1,g,0,0);
+
     placeSprite(g->pixel_arr,&(g->life_bar_1));
     placeSprite(g->pixel_arr,&(g->timer_bar_1));
     placeSprite(g->pixel_arr,&(g->timer_mark_1));
-    placeSprite(g->pixel_arr,&(g->level_num_1));
+    if (g->level > 9) {
+        placeSprite(g->pixel_arr,&(g->level_num_1));
+    }
     placeSprite(g->pixel_arr,&(g->level_num_0));
     placeSprite(g->pixel_arr,&(g->level_sprite));
-
     size_t i;
     for (i = 0; i < g->size; i++) {
-        placeSprite(g->pixel_arr,&(g->key_arr[i]));
+        placeSprite(g->pixel_arr,&(g->key_arr_1[i]));
     }
+
 }
 
 
-void resetKeys(GameScreen *g) {
+void resetKeys(GameScreen *g, int player) {
     size_t i;
-    for (i = 0; i <= g->arrow_index_1; i++) {
-        changeArrowColor(&(g->key_arr[i]),BLUE);
+    Sprite * keys = (player == 1)? g->key_arr_1: g->key_arr_2;
+
+    for (i = 0; i < g->arrow_index_1; i++) {
+        changeArrowColor(&keys[i],BLUE);
     }
 
     g->arrow_index_1 = 0;
@@ -852,10 +884,12 @@ void clearSprites(GameScreen *g) {
 
     size_t i;
     for (i = 0; i < g->size; i++) {
-        free(g->key_arr[i].pixel_arr);
+        free(g->key_arr_1[i].pixel_arr);
+        free(g->key_arr_2[i].pixel_arr);
     }
 
     g->arrow_index_1 = 0;
+    g->arrow_index_2= 0;
     g->size = 0;
 }
 
