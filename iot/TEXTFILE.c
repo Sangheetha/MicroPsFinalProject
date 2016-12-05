@@ -7,10 +7,7 @@ int main()
     char *data;
     int key_seq;
     
-    printf("%s%c%c\n",
-           "Content-Type:text/html;charset=iso-8859-1",13,10);
-    data = getenv("QUERY_STRING");
-    printf("after getenv. ");
+        data = getenv("QUERY_STRING");
     if(data == NULL){
         printf(" Error passing data from form to script.");
         exit(0);
@@ -25,13 +22,12 @@ int main()
         printf("Error opening file.\n");
         exit(0);
     }
-    printf(data);
     // Write to file
 
     fprintf(fp,"%i\n",key_seq);
-
     // Close file
     fclose(fp);
-    
+    printf("%s%c%c\n","Content-Type:text/html;charset=iso-8859-1",13,10);
+  
     return 0;
 }

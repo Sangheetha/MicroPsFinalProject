@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -94,6 +93,8 @@ struct GameScreen {
     Sprite timer_mark_2;
     Sprite life_bar_2;
     Sprite key_arr_2[20];
+    
+    Sprite star;
 };
 
 typedef struct GameScreen GameScreen;
@@ -142,13 +143,12 @@ void placeSprite(int* screen_pointer, Sprite* sp) {
     size_t xStart = sp->x_pos;
 
     for (row = 0; row < sp->height; row++) {
-        
+   
         size_t yPos = yStart + row; 
 
         for (col = 0; col < sp->width; col++) {
             int pixel = getPixelAt(col,row,sp);
             size_t xPos = xStart + col;
-
             long int screenIndex = yPos*SCREEN_WIDTH + xPos;
             *(screen_pointer + screenIndex) = pixel;
         }
@@ -251,8 +251,7 @@ void makeUpArrow(Sprite* sp, size_t x_pos, size_t y_pos, int arrow_col){
 
     for (row = 0; row < ARROW_HEIGHT_WIDTH; row++) {
         for (col = 0; col < ARROW_HEIGHT_WIDTH; col++) {
-
-           if ((col < ARROW_HEIGHT_WIDTH/4 && row > ARROW_HEIGHT_WIDTH/2) ||
+                      if ((col < ARROW_HEIGHT_WIDTH/4 && row > ARROW_HEIGHT_WIDTH/2) ||
                (col > 3*ARROW_HEIGHT_WIDTH/4 && row > ARROW_HEIGHT_WIDTH/2) ||
                ((col < ARROW_HEIGHT_WIDTH/2 - row || col > ARROW_HEIGHT_WIDTH/2 + row ) && row < 50)) {
                 
@@ -347,7 +346,6 @@ void changeArrowColor(Sprite*sp, int color) {
         }
     }
 }
-
 
 //////////////////////
 /// Draw Char /////////
@@ -618,6 +616,25 @@ void makeHyphen(Sprite* sp, size_t x_pos, size_t y_pos) {
            }
          }
     }}
+
+void makeStar(Sprite* sp, size_t x_pos, size_t y_pos) {
+    sp->width = CHAR_HEIGHT/2;
+    sp->height = CHAR_HEIGHT/2;
+    sp->x_pos = x_pos;
+    sp->y_pos = y_pos;
+    sp->pixel_arr = (int*) malloc((sp->width)*(sp->height)*sizeof(int));
+
+    size_t row, col;
+    for (row = 0; row < sp->height; row++) {
+        for (col=0; col < sp->width; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if ( ((row > sp->height/2 - CHAR_THICK/4 && row < sp->height/2 + CHAR_THICK/4) || ( col > sp->width/2 - CHAR_THICK/4 && col < sp->width/2 + CHAR_THICK/4)) ||
+               ((col >= row && col <= row + CHAR_THICK/4) || (col >= sp->width - row-CHAR_THICK/4 && col <= sp->width - row)) ) {
+                setPixelAt(col,row,sp,WHITE);
+            }
+        }
+    }
+}
 
 void makeA(Sprite*sp, size_t row, size_t col, size_t col_temp, int color) {
      size_t row_inv = sp->height - row - 1;
@@ -1385,6 +1402,7 @@ void makeStartScreen(GameScreen* g, int color) {
     makePlayer(&sp,pick_xPos+CHAR_WIDTH*3+20, pick2_yPos);
     placeSprite(g->pixel_arr,&sp);
     free(sp.pixel_arr);
+
 }
 
 void makeDeathScreenOne(GameScreen * g) {

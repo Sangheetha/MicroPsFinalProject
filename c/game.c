@@ -21,17 +21,19 @@
 #define KEY_MATCH_OPCODE 0x20
 #define GAME_STATUS_OPCODE 0x30
 
+
 /////////////////////////////////////
-///SPI Functions Prototype 
+///SPI and KeyGen Functions Prototype 
 /////////////////////////////////////
 
 int getStartInfo(GameScreen *);
-int getLevelInfoOne(GameScreen *);
-int getLevelInfoTwo(GameScreen *);
 void keyMatch(size_t *, GameScreen *);
-void generateKeys(GameScreen *, size_t);
 int sendKeySequenceOne(GameScreen *);
 int sendKeySequenceTwo(GameScreen *); 
+
+void updateKeys(GameScreen *);
+void generateKeys(GameScreen *);
+void processKeyLine(GameScreen*, char*, ssize_t);
 
 ///////////////////////////////////
 //Main
@@ -59,7 +61,6 @@ int main(int argc, char* argv[]) {
   GameScreen screen;
   
 
-  printf("before whilei\n");
 
   size_t timer_data;
   int timer_count;
@@ -91,14 +92,14 @@ int main(int argc, char* argv[]) {
             screen.mode = 1;
             //Initialize level for one-player
             clearContents(screen.pixel_arr,screensize_in_int); 
-            generateKeys(&screen, screen.num_keys);
+            //generateKeys(&screen);
+            updateKeys(&screen);
             start = sendKeySequenceOne(&screen);
             if (start == -1) {
                 next_state = DEATH_SCREEN_ONE;
                 break;
             }
             initializeLevel(&screen);
-            printf("level is %d\n", screen.level);
             updateGameScreenSinglePlayer(&screen);
             next_state = PLAY_LEVEL_ONE;
             break;
@@ -110,7 +111,6 @@ int main(int argc, char* argv[]) {
             setTimerPos(&(screen.timer_mark_1), timer_data, TIMER_MAX, TIME_1_X_POS);
             if (timer_data > 0xFb000 | screen.life_1 == 0) {
                 clearSprites(&screen);
-                printf("%x\n",timer_data);
                 next_state = INIT_LEVEL_ONE;
                 screen.key_seq[0] = ((screen.key_seq[0] + 1)%4) + 1;
                 break;
@@ -130,8 +130,8 @@ int main(int argc, char* argv[]) {
             screen.mode = 2;
             //Initialize level for two players
             clearContents(screen.pixel_arr,screensize_in_int);
-            
-            generateKeys(&screen, screen.num_keys);
+            updateKeys(&screen);
+            //generateKeys(&screen);
             start = sendKeySequenceTwo(&screen);
             if (start == -1) {
                 next_state = DEATH_SCREEN_TWO;
@@ -149,7 +149,6 @@ int main(int argc, char* argv[]) {
             //If timer is up or a player died, go back to init state
             if (timer_data > 0xF7000 | screen.life_1 == 0 | screen.life_2 == 0) {
                 clearSprites(&screen);
-                printf("%x\n",timer_data);
                 next_state = INIT_LEVEL_TWO;
                 screen.key_seq[0] = ((screen.key_seq[0] + 1)%4) + 1;
                 break;
@@ -243,59 +242,6 @@ int getStatusInfo(GameScreen *g) {
     }
 
 }
-/*
-int getLevelInfoOne(GameScreen *g) {
-    
-    char death_life_level;
-    char messArr[MAX_KEYS/2];
-    size_t i, index, offset;
-    int current_key;
-
-
-    digitalWrite(LOAD_PIN,1);
-
-    spiSendReceive(LEVEL_INFO_OPCODE);
-    spiSendReceive(0);
-    spiSendReceive(0);
-    spiSendReceive(0);
-    spiSendReceive(0);
-
-    *spiSendReceive(0);
-    spiSendReceive(0);
-    spiSendReceive(0);
-    spiSendReceive(0);
-
-
-    digitalWrite(LOAD_PIN,0);
-
-    while(!digitalRead(DONE_PIN));
-    death_life_level = spiSendReceive(0);
-
-    for (i = 0; i < MAX_KEYS/2; i++) {
-        messArr[i] = spiSendReceive(0);
-    }
-   
-    g->life_1 = (death_life_level >> 4)&0x7; //Extract life
-    if (g->life_1 == 0) {
-        return -1;
-    }
-    g->level = death_life_level&0xF; //Extract level
-
-    for (i = 0; i < MAX_KEYS; i++) {
-        index = i/2;
-        offset = 1 -i%2;
-        
-        current_key = (messArr[index] >> 4*offset)&0xF;
-        if (current_key == 0xF) {
-            break;
-        } else {
-            addSpriteToGame(current_key, g, 300 + i*110, 500);
-        }
-    }
-
-    return 0;
-}
-*/
 void keyMatch(size_t * timer_data, GameScreen * g) {
 
    char match_timer_info, timer_info_1, timer_info_2, life_info;
@@ -335,12 +281,12 @@ void keyMatch(size_t * timer_data, GameScreen * g) {
    *timer_data = ((match_timer_info & 0xF) << 16) | (timer_info_1 << 8) | timer_info_2;
 }
 
-void generateKeys(GameScreen * g , size_t numKeys) {
+void generateKeys(GameScreen * g) {
     size_t i,rand_key;
-    if (numKeys > 15) {
-        numKeys = 15;
+    if (g->num_keys > 15) {
+        g->num_keys = 15;
     }
-    for (i = 0; i < numKeys; i++) {
+    for (i = 0; i < g->num_keys; i++) {
         rand_key = (rand()%4) + 1;
         g->key_seq[i] = rand_key;
     } 
@@ -430,7 +376,7 @@ int sendKeySequenceTwo(GameScreen* g) {
     }
 
     g->level = level; //Extract level
-    
+       
     for (i = 0; i < MAX_KEYS; i++) {
         current_key = g->key_seq[i];
         if (current_key != 0xF) {
@@ -443,4 +389,51 @@ int sendKeySequenceTwo(GameScreen* g) {
     }
 
     return 0;
+}
+
+void updateKeys(GameScreen * g) {
+    FILE *fp;
+    char* line = NULL;
+    size_t len = 0;
+    int count = 0;
+    ssize_t read;
+
+    fp = fopen("/home/pi/key_seq.dat","r");
+    if (fp == NULL) {
+        printf("Error opening file.\n");
+        exit(0);
+    }
+
+    while ((read = getline(&line,&len,fp)) !=-1){
+        if (count == g->level) {
+            processKeyLine(g,line,read);
+            g->key_src = 1;
+            return;
+        }
+        count++;
+    }
+
+    g->key_src = 0;
+    generateKeys(g);
+}
+
+void processKeyLine(GameScreen * g, char * line, ssize_t len) {
+   size_t i;
+   int key;
+   len = len - 1;
+
+   for (i = 0; i < len; i++) {
+     key = line[i] - 48; //Most encodings have a difference of 48 between '1' and 1
+     if (key >  0 && key < 5) {
+        g->key_seq[i] = key;
+     } else {
+       //the key sequence terminates early
+        g->key_seq[i] = 0xF;
+    }
+   }
+
+   for (; i < MAX_KEYS; i++) {
+     g->key_seq[i] = 0xF;
+   }
+
 }
