@@ -53,38 +53,23 @@ int main(int argc, char* argv[]) {
   
 
   srand(time(NULL));
+  int blink = 0;
   int game_state;
   int next_state;
-  int level;
   GameScreen screen;
-  screen.key_seq[0] = 0xF;
-  screen.key_seq[1] = 0xF;
-  screen.key_seq[2] = 0xF;
-  screen.key_seq[3] = 0xF;
-  screen.key_seq[4] = 0xF;
-  screen.key_seq[5] = 0xF;//0x1;
-  screen.key_seq[6] = 0xF;//0x4;
-  screen.key_seq[7] = 0xF;//4;
-  screen.key_seq[8] = 0xF;//1;
-  screen.key_seq[9] = 0xF;//2;
-  screen.key_seq[10] = 0xF;//1;
-  screen.key_seq[11] = 0xF;//3;
-  screen.key_seq[12] = 0xF;//3;
-  screen.key_seq[13] = 0xF;
-  screen.key_seq[14] = 0xF;
-  screen.key_seq[15] = 0xF;
-  initializeScreen(&screen);
+  
 
   printf("before whilei\n");
 
   size_t timer_data;
   int timer_count;
   int start;
+  int color = BLUE;
   Sprite sp;
 
   int not_close_game = 1;
     
-  next_state = START_SCREEN;
+  next_state = START_SCREEN;//START_SCREEN;
   clearContents(screen.pixel_arr,screensize_in_int);
 
   while(not_close_game) {
@@ -93,22 +78,27 @@ int main(int argc, char* argv[]) {
     {   
         case START_SCREEN:
            clearContents(screen.pixel_arr,screensize_in_int);
-           makeStartScreen(&screen);
+           screen.level = 0;
+           initializeScreen(&screen);
+
+           makeStartScreen(&screen, color);
+           blink = (blink + 1)%4;
+           if (blink == 0) {
+            if (color == GREEN) {color = BLUE;} else {color=GREEN;}}
            next_state = getStatusInfo(&screen);
            break;
         case INIT_LEVEL_ONE:
             screen.mode = 1;
             //Initialize level for one-player
             clearContents(screen.pixel_arr,screensize_in_int); 
-            //start = getLevelInfoOne(&screen);
-            generateKeys(&screen, 7);
+            generateKeys(&screen, screen.num_keys);
             start = sendKeySequenceOne(&screen);
-            printf("Initializing a level: %d\n",screen.level);
             if (start == -1) {
                 next_state = DEATH_SCREEN_ONE;
                 break;
             }
             initializeLevel(&screen);
+            printf("level is %d\n", screen.level);
             updateGameScreenSinglePlayer(&screen);
             next_state = PLAY_LEVEL_ONE;
             break;
@@ -118,7 +108,7 @@ int main(int argc, char* argv[]) {
             //pressed.
             keyMatch(&timer_data,&screen);
             setTimerPos(&(screen.timer_mark_1), timer_data, TIMER_MAX, TIME_1_X_POS);
-            if (timer_data > 0xF7000 | screen.life_1 == 0) {
+            if (timer_data > 0xFb000 | screen.life_1 == 0) {
                 clearSprites(&screen);
                 printf("%x\n",timer_data);
                 next_state = INIT_LEVEL_ONE;
@@ -140,7 +130,8 @@ int main(int argc, char* argv[]) {
             screen.mode = 2;
             //Initialize level for two players
             clearContents(screen.pixel_arr,screensize_in_int);
-            generateKeys(&screen, 7);
+            
+            generateKeys(&screen, screen.num_keys);
             start = sendKeySequenceTwo(&screen);
             if (start == -1) {
                 next_state = DEATH_SCREEN_TWO;
@@ -186,12 +177,12 @@ int main(int argc, char* argv[]) {
             break;
         case DEATH_SCREEN_ONE:
             clearContents(screen.pixel_arr,screensize_in_int);
+            makeDeathScreenOne(&screen);
             next_state = getStatusInfo(&screen);
             break;
         case DEATH_SCREEN_TWO:
             clearContents(screen.pixel_arr,screensize_in_int);
-            makeDigit(&sp,screen.winner,500,500);
-            placeSprite(screen.pixel_arr,&sp);
+            makeDeathScreenTwo(&screen);
             next_state = getStatusInfo(&screen);
             break;
         default:
@@ -346,6 +337,9 @@ void keyMatch(size_t * timer_data, GameScreen * g) {
 
 void generateKeys(GameScreen * g , size_t numKeys) {
     size_t i,rand_key;
+    if (numKeys > 15) {
+        numKeys = 15;
+    }
     for (i = 0; i < numKeys; i++) {
         rand_key = (rand()%4) + 1;
         g->key_seq[i] = rand_key;

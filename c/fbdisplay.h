@@ -1,4 +1,4 @@
-#include <unistd.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,6 +72,7 @@ struct GameScreen {
     int winner;
     int mode;
     int key_src;
+    int num_keys;
     Sprite level_sprite;
     Sprite level_num_0;
     Sprite level_num_1;
@@ -103,6 +104,8 @@ void initializeScreen(GameScreen *g) {
     g->arrow_index_1 = 0;
     g->arrow_index_2 = 0;
     g->winner = 0;
+
+    g->num_keys = 4 + g->level/4;    
 }
 
 void clearContents(int *fbp, long int screensize_int) {
@@ -152,136 +155,8 @@ void placeSprite(int* screen_pointer, Sprite* sp) {
     }
 }
 
-void makeLevel(Sprite* sp, size_t xPos, size_t yPos) {
-    
-    sp->width = LEVEL_WIDTH;
-    sp->height = LEVEL_HEIGHT;
-    sp->x_pos = xPos;
-    sp->y_pos = yPos;
-    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
 
-    size_t letter1_col = 0;
-    size_t letter2_col = CHAR_WIDTH + 10;
-    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
-    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
-    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
 
-    size_t row, col,col_temp;
-    for (row = 0; row < LEVEL_HEIGHT; row ++) {
-        for (col = 0; col < LEVEL_WIDTH; col++) {
-            setPixelAt(col,row,sp,BACKGROUND);
-            if (col < CHAR_WIDTH) {
-               //Draw 'L'
-                if (col < CHAR_THICK || 
-                    row > LEVEL_HEIGHT - CHAR_THICK) {
-                    setPixelAt(col,row,sp,WHITE);
-                }
-
-            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
-                col_temp = col - letter2_col;
-                //Draw 'E'
-                if (col_temp < CHAR_THICK ||
-                    row < CHAR_THICK ||
-                    row > LEVEL_HEIGHT - CHAR_THICK ||
-                    (row > LEVEL_HEIGHT/2 - CHAR_THICK /2 && row < LEVEL_HEIGHT/2 + CHAR_THICK/2)) {
-                    setPixelAt(col,row,sp,WHITE);
-                }
-            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
-               col_temp = col - letter3_col;
-               //Draw 'V'
-               if ((col_temp >= row/4 && col_temp <=row/4 +CHAR_THICK) ||
-                    (col_temp >= CHAR_WIDTH - row/4-CHAR_THICK && col_temp <= CHAR_WIDTH-row/4)) {
-                setPixelAt(col,row,sp,WHITE);
-               }
-
-            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
-                col_temp = col - letter4_col;
-                if (col_temp < CHAR_THICK ||
-                    row < CHAR_THICK ||
-                    row > LEVEL_HEIGHT - CHAR_THICK ||
-                    (row > LEVEL_HEIGHT/2 - CHAR_THICK /2 && row < LEVEL_HEIGHT/2 + CHAR_THICK/2)) {
-                    setPixelAt(col,row,sp,WHITE);
-                }
-            } else if (col < letter5_col+CHAR_WIDTH && col > letter5_col) {
-                col_temp = col - letter5_col;
-                if (col_temp < CHAR_THICK || 
-                    row > LEVEL_HEIGHT - CHAR_THICK) {
-                    setPixelAt(col,row,sp,WHITE);
-                }
-            }
-        }
-    }
-    
-}
-/*
-void makePress(Sprite* sp, size_t xPos, size_t yPos) {
-    
-    sp->width = LEVEL_WIDTH;
-    sp->height = LEVEL_HEIGHT;
-    sp->x_pos = xPos;
-    sp->y_pos = yPos;
-    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
-
-    size_t letter1_col = 0;
-    size_t letter2_col = CHAR_WIDTH + 10;
-    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
-    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
-    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
-
-    size_t row, col,col_temp;
-    for (row = 0; row < LEVEL_HEIGHT; row ++) {
-        for (col = 0; col < LEVEL_WIDTH; col++) {
-            setPixelAt(col,row,sp,BACKGROUND);
-            if (col < CHAR_WIDTH) {
-               //Draw 'P'
-                if (col < CHAR_THICK || 
-                    row < CHAR_THICK || 
-                    (col > sp->width - CHAR_THICK && row < sp->height/2) ||
-                    (row > sp->height/2 - CHAR_THICK && row < sp->height/2)) {
-                    setPixelAt(col,row,sp,WHITE);
-                }
-
-            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
-                col_temp = col - letter2_col;
-                //Draw 'R'
-                if (col_temp < CHAR_THICK || 
-                    row < CHAR_THICK || 
-                    (col_temp > sp->width - CHAR_THICK && row < sp->height/2) ||
-                    (row > sp->height/2 - CHAR_THICK && row < sp->height/2)||
-                    (row > sp->height/2 && col_temp >= row/2 && col_temp <= row/2 + CHAR_THICK) {
-                    setPixelAt(col,row,sp,WHITE);
-                }
-            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
-               col_temp = col - letter3_col;
-               //Draw 'E'
-               if (col_temp < CHAR_THICK ||
-                    row < CHAR_THICK ||
-                    row > LEVEL_HEIGHT - CHAR_THICK ||
-                    (row > LEVEL_HEIGHT/2 - CHAR_THICK /2 && row < LEVEL_HEIGHT/2 + CHAR_THICK/2)) {
-                    setPixelAt(col,row,sp,WHITE);
-                }
-
-            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
-                //Draw 'S'
-                col_temp = col - letter4_col;
-                if (row < CHAR_THICK ||
-                    (row < sp->height/2 + CHAR_THICK/2 && row > sp->height/2 - CHAR_THICK/2) ||
-                    (row > sp->height - CHAR_THICK)) {
-                    setPixelAt(col,row,sp,WHITE);
-                }
-            } else if (col < letter5_col+CHAR_WIDTH && col > letter5_col) {
-                col_temp = col - letter5_col;
-                if (col_temp < CHAR_THICK || 
-                    row > LEVEL_HEIGHT - CHAR_THICK) {
-                    setPixelAt(col,row,sp,WHITE);
-                }
-            }
-        }
-    }
-    
-}
-
-*/
 //Modifies sp to be a life bar of the correct width
 void makeLifeBar(Sprite* sp, int lifepoints, size_t x_pos, size_t y_pos) {  
     sp->width = LIFE_BAR_MAX_WIDTH;
@@ -473,6 +348,7 @@ void changeArrowColor(Sprite*sp, int color) {
     }
 }
 
+
 //////////////////////
 /// Draw Char /////////
 //////////////////////
@@ -482,7 +358,7 @@ void makeOne(Sprite*sp) {
     size_t row, col;
     for (row = 0; row < sp->height; row++) {
         for (col = 0; col < sp->width; col++) {
-            if (col > sp->width - CHAR_THICK) {
+            if (col > CHAR_WIDTH/2 - CHAR_THICK/2 && col < CHAR_WIDTH/2 + CHAR_THICK/2) {
                 setPixelAt(col,row,sp,WHITE);
             } else {
                 setPixelAt(col,row,sp,BACKGROUND);
@@ -502,7 +378,7 @@ void makeTwo(Sprite* sp) {
             {
                 setPixelAt(col,row,sp,WHITE);
 
-            } else if ((row < sp->height/2 - CHAR_THICK/2 && col > sp->width-CHAR_THICK) ||
+            } else if ((row < sp->height/2 - CHAR_THICK/2 && col > CHAR_WIDTH-CHAR_THICK) ||
                        (row > sp->height/2 + CHAR_THICK/2 && col < CHAR_THICK))
               {
                 setPixelAt(col,row,sp,WHITE);
@@ -709,111 +585,223 @@ void makeNum(Sprite* num_1, Sprite* num_0, size_t level, size_t x_pos, size_t y_
 
 }
 
-void makeA(Sprite*sp) {
-    size_t row,col,row_inv;
-    for (row = 0; row < sp-> height; row++) {
-        for (col = 0; col < sp->width; col++) {
-            setPixelAt(col,row,sp,BACKGROUND);
-            row_inv = sp->height - row - 1;
-            if ((col >= row_inv/5 && col <=row_inv/5 + CHAR_THICK) ||
-                (col >= CHAR_WIDTH - row_inv/5 - CHAR_THICK && col <= CHAR_WIDTH-row_inv/5) ||
-                (row < sp->height/2 + CHAR_THICK && row > sp->height/2 && col > CHAR_THICK + row_inv/5 && col < CHAR_WIDTH-row_inv/5)) {
-                setPixelAt(col,row,sp,WHITE);
-            }
-        }
-    }
-
-}
-
-void makeC(Sprite* sp) {
-   size_t row, col;
-   for (row=0; row < sp->height; row++) {
-    for (col = 0; col < sp->width; col++) {
-        setPixelAt(col,row,sp,BACKGROUND);
-
-        if (col < CHAR_THICK ||
-            row < CHAR_THICK ||
-            row > sp->height - CHAR_THICK) {
-            setPixelAt(col,row,sp,WHITE);
-        }
-    }
-  }
-}
-
-void makeE(Sprite* sp) {
+void makeColon(Sprite * sp, size_t x_pos, size_t y_pos) {
+    sp->width = CHAR_THICK;
+    sp->height = CHAR_HEIGHT;
+    sp->x_pos = x_pos;
+    sp->y_pos = y_pos;
+    sp->pixel_arr = (int*) malloc(CHAR_THICK*CHAR_HEIGHT*sizeof(int));
+    
     size_t row,col;
-    for (row=0; row < sp->height;row++){
-        for (col = 0; col < sp->width; col++) {
-        setPixelAt(col,row,sp,BACKGROUND);
-
-        if (col < CHAR_THICK ||
-            row < CHAR_THICK ||
-            row > sp->height - CHAR_THICK ||
-            (row < sp->height/2 + CHAR_THICK/2 && row > sp->height/2 - CHAR_THICK/2)) {
-            setPixelAt(col,row,sp,WHITE);
-        } 
-       }
-    }
-}
-
-void makeL(Sprite* sp) {
-   //TODO:Write this
-}
-
-void makeP(Sprite*sp) {
-    size_t row,col;
-    for (row = 0; row < sp->height; row++) {
-        for (col = 0; col < sp->width; col ++) {
-            if (col < CHAR_THICK ||
-                row < CHAR_THICK ||
-                (col > sp->width - CHAR_THICK && row < sp->height/2) ||
-                (row > sp->height/2 - CHAR_THICK && row < sp->height/2)) {
-                    setPixelAt(col,row,sp,WHITE);
-            } else {
-                setPixelAt(col,row,sp,BACKGROUND);
-            }
+    for (row = 0; row < CHAR_HEIGHT; row++) {
+        for (col = 0; col < CHAR_THICK; col++) {
+           setPixelAt(col,row,sp,BACKGROUND);
+           if (row < CHAR_THICK && row > CHAR_HEIGHT - CHAR_THICK) {
+             setPixelAt(col,row,sp,WHITE);
+           }
          }
+    }}
+
+void makeHyphen(Sprite* sp, size_t x_pos, size_t y_pos) {
+    sp->width = CHAR_WIDTH;
+    sp->height = CHAR_HEIGHT;
+    sp->x_pos = x_pos;
+    sp->y_pos = y_pos;
+    sp->pixel_arr = (int*) malloc(CHAR_WIDTH*CHAR_HEIGHT*sizeof(int));
+    
+    size_t row,col;
+    for (row = 0; row < CHAR_HEIGHT; row++) {
+        for (col = 0; col < CHAR_WIDTH; col++) {
+           setPixelAt(col,row,sp,BACKGROUND);
+           if (row > CHAR_HEIGHT/2 - CHAR_THICK/2 && row < CHAR_HEIGHT/2 + CHAR_THICK && col < CHAR_HEIGHT-CHAR_THICK/2 && col > CHAR_THICK/2) {
+             setPixelAt(col,row,sp,WHITE);
+           }
+         }
+    }}
+
+void makeA(Sprite*sp, size_t row, size_t col, size_t col_temp, int color) {
+     size_t row_inv = sp->height - row - 1;
+     if ((col_temp >= row_inv/5 && col_temp <=row_inv/5 + CHAR_THICK) ||
+       (col_temp >= CHAR_WIDTH - row_inv/5 - CHAR_THICK && col_temp <= CHAR_WIDTH-row_inv/5) ||
+       (row < sp->height/2 + CHAR_THICK && row > sp->height/2 && col_temp > CHAR_THICK + row_inv/5 && col_temp < CHAR_WIDTH-row_inv/5)) {
+           setPixelAt(col,row,sp,color);
+    }
+
+}
+
+void makeB(Sprite* sp,size_t row, size_t col, size_t col_temp, int color) {
+    if (col_temp < CHAR_THICK ||
+      (row < CHAR_THICK && col < CHAR_WIDTH - CHAR_THICK/2) ||
+      (row > sp->height - CHAR_THICK && col < CHAR_WIDTH - CHAR_THICK/2) || 
+      (row < sp->height/2+CHAR_THICK/2 && row>sp->height/2 -CHAR_THICK/2 && col_temp < CHAR_WIDTH-CHAR_THICK/2) ||
+      (col > CHAR_WIDTH - CHAR_THICK && ((row < CHAR_HEIGHT-CHAR_THICK/2 && row >=CHAR_HEIGHT/2+CHAR_THICK/2) ||(row > CHAR_THICK/2 && row <= CHAR_HEIGHT/2-CHAR_THICK/2)))) {
+        setPixelAt(col,row,sp,color);
+    }
+}
+void makeC(Sprite* sp,size_t row, size_t col, size_t col_temp, int color) {
+    if (col_temp < CHAR_THICK ||
+      row < CHAR_THICK ||
+      row > sp->height - CHAR_THICK) {
+        setPixelAt(col,row,sp,color);
+    }
+}
+
+void makeE(Sprite* sp, size_t row, size_t col, size_t col_temp, int color) {
+    if (col_temp < CHAR_THICK ||
+        row < CHAR_THICK ||
+        row > sp->height - CHAR_THICK ||
+        (row < sp->height/2 + CHAR_THICK/2 && row > sp->height/2 - CHAR_THICK/2)) {
+            setPixelAt(col,row,sp,color);
+    }
+}
+
+void makeI(Sprite* sp, size_t row, size_t col, size_t col_temp, int color) {
+    if ((col_temp < CHAR_WIDTH/2 + CHAR_THICK/2 && col_temp > CHAR_WIDTH/2 - CHAR_THICK/2) || 
+        row < CHAR_THICK ||
+        row > CHAR_HEIGHT - CHAR_THICK) {
+        setPixelAt(col,row,sp,color);
+   }
+}
+
+void makeL(Sprite* sp, size_t row, size_t col, size_t col_temp, int color) {
+   if (col_temp < CHAR_THICK || 
+       row > LEVEL_HEIGHT - CHAR_THICK) {
+        setPixelAt(col,row,sp,color);
+   }
+}
+
+void makeN(Sprite* sp, size_t row, size_t col, size_t col_temp, int color) {
+    if(col_temp < CHAR_THICK || col_temp > CHAR_WIDTH - CHAR_THICK ||
+       (col_temp >= row/2 && col_temp <= row/2 + CHAR_THICK)) {
+       setPixelAt(col,row,sp,color);
+    }
+}
+
+void makeO(Sprite* sp, size_t row, size_t col, size_t col_temp, int color) {
+    if (col_temp < CHAR_THICK || row < CHAR_THICK ||
+       col_temp > CHAR_WIDTH - CHAR_THICK ||
+       row > CHAR_HEIGHT - CHAR_THICK) {
+
+        setPixelAt(col,row,sp,color);
+    }
+}
+
+void makeP(Sprite*sp, size_t row, size_t col, size_t col_temp, int color) {
+    if (col_temp < CHAR_THICK ||
+        row < CHAR_THICK ||
+        (col_temp > CHAR_WIDTH - CHAR_THICK && row < sp->height/2) ||
+        (row > sp->height/2 - CHAR_THICK && row < sp->height/2)) {
+            setPixelAt(col,row,sp, color);
      }
 }
 
-void makeR(Sprite*sp) {
-    //TODO:write this
-}
-void makeY(Sprite *sp) {
-    //TODO: write this
+void makeR(Sprite*sp, size_t row, size_t col, size_t col_temp, int color) {
+    if (col_temp < CHAR_THICK || 
+        row < CHAR_THICK || 
+        (col_temp > CHAR_WIDTH - CHAR_THICK && row < sp->height/2) ||
+        (row > sp->height/2 - CHAR_THICK && row < sp->height/2)||
+        (row >= sp->height/2 && col_temp >= row/2 && col_temp <= row/2 + CHAR_THICK)) {
+        setPixelAt(col,row,sp,color);
+    }
 }
 
-void makeChar(Sprite* sp,char c, size_t x_pos,size_t y_pos) {
-    sp->x_pos = x_pos;
-    sp->y_pos = y_pos;
-    sp->height = CHAR_HEIGHT;
-    sp->width = CHAR_WIDTH;
-    sp->pixel_arr = (int*) malloc(CHAR_HEIGHT*CHAR_WIDTH*sizeof(int));
+void makeS(Sprite*sp, size_t row, size_t col, size_t col_temp, int color) {
+    if (row < CHAR_THICK ||
+       (row < sp->height/2 + CHAR_THICK/2 && row > sp->height/2 - CHAR_THICK/2) ||
+       row > sp->height - CHAR_THICK ||
+       (row < sp->height/2 && col_temp < CHAR_THICK) ||
+       (row > sp->height/2 && col_temp > CHAR_WIDTH - CHAR_THICK)) {
+
+      setPixelAt(col,row,sp,color);
+    }
+
+}
+
+void makeT(Sprite *sp,size_t row, size_t col, size_t col_temp, int color) {
+    if (row < CHAR_THICK || 
+        (col_temp > CHAR_WIDTH/2 - CHAR_THICK/2 && col_temp < CHAR_WIDTH/2 + CHAR_THICK/2)) {
+           setPixelAt(col,row,sp,color);
+   }
+}
+
+void makeU(Sprite*sp,size_t row, size_t col, size_t col_temp, int color) {
+   if (col_temp < CHAR_THICK || col_temp > CHAR_WIDTH - CHAR_THICK ||
+      row > CHAR_HEIGHT - CHAR_THICK) {
+        setPixelAt(col,row,sp,color);
+   }
+}
+
+void makeV(Sprite*sp, size_t row, size_t col, size_t col_temp, int color) {
+    if ((col_temp >= row/4 && col_temp <=row/4 +CHAR_THICK) ||
+                    (col_temp >= CHAR_WIDTH - row/4-CHAR_THICK && col_temp <= CHAR_WIDTH-row/4)) {
+                setPixelAt(col,row,sp,color);
+    }
+}
+
+void makeW(Sprite*sp, size_t row, size_t col, size_t col_temp, int color) {
+    if ((col_temp >= row/16 && col_temp <=row/16 +CHAR_THICK) ||
+         (col_temp >= CHAR_WIDTH - row/16-CHAR_THICK && col_temp <= CHAR_WIDTH-row/16)) {
+                setPixelAt(col,row,sp,color);
+    }
+}
+void makeY(Sprite *sp,size_t row, size_t col, size_t col_temp, int color) {
+   if ((col_temp >= row/2 && col_temp <=row/2 + CHAR_THICK & row < CHAR_HEIGHT/2) || 
+       (col_temp >= CHAR_WIDTH-row/2-CHAR_THICK && col_temp <=CHAR_WIDTH-row/2 & row < CHAR_HEIGHT/2) ||
+       (col_temp >= CHAR_WIDTH/2 - CHAR_THICK/2 && col_temp <= CHAR_WIDTH/2 + CHAR_THICK/2 && row >= CHAR_HEIGHT/2)) {
+       setPixelAt(col,row,sp,color);
+   }
+}
+
+void makeChar(Sprite* sp,char c,size_t row, size_t col,size_t col_temp, int color) {
 
     switch(c) {
         case 'A':
-            makeA(sp);
+            makeA(sp,row,col,col_temp, color);
+            break;
+        case 'B':
+            makeB(sp,row,col,col_temp,color);
             break;
         case 'C':
-            makeC(sp);
+            makeC(sp,row,col,col_temp, color);
             break;
         case 'E':
-            makeE(sp);
+            makeE(sp,row,col,col_temp, color);
+            break;
+        case 'I':
+            makeI(sp,row,col,col_temp,color);
             break;
         case 'L':
-            makeL(sp);
+            makeL(sp,row,col,col_temp, color);
+            break;
+        case 'N':
+            makeN(sp,row,col,col_temp,color);
+            break;
+        case 'O':
+            makeO(sp,row,col,col_temp,color);
             break;
         case 'P':
-            makeP(sp);
+            makeP(sp,row,col,col_temp, color);
             break;
         case 'R':
-            makeR(sp);
+            makeR(sp,row,col,col_temp, color);
             break;
         case 'S':
-            makeFive(sp);
+            makeS(sp,row,col,col_temp, color);
+            break;
+        case 'T':
+            makeT(sp,row,col,col_temp,color);
+            break;
+        case 'U':
+            makeU(sp,row,col,col_temp,color);
+            break;
+        case 'V':
+            makeV(sp,row,col,col_temp,color);
+            break;
+        case 'W':
+            makeW(sp,row,col,col_temp,color); 
             break;
         case 'Y':
-            makeY(sp);
+            makeY(sp,row,col,col_temp, color);
             break;
         default:
             break;
@@ -823,43 +811,680 @@ void makeChar(Sprite* sp,char c, size_t x_pos,size_t y_pos) {
 }
 
 ///////////////////////////////
-//// Updating Screen //////////
+///// Making Words ////////////
 ///////////////////////////////
-void makeStartScreen(GameScreen* g) {
-    Sprite sp;
-    makeRightArrow(&sp,SCREEN_WIDTH/2-200,SCREEN_HEIGHT/2-120,BLUE);
-    placeSprite(g->pixel_arr,&sp);
-    free(sp.pixel_arr);
+void makeSpace(Sprite*sp, size_t xPos, size_t yPos) {
+    
+    sp->width = LEVEL_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
+    
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
 
-    makeDigit(&sp,5,SCREEN_WIDTH/2-200 + ARROW_HEIGHT_WIDTH + 10, SCREEN_HEIGHT/2-110);
-    placeSprite(g->pixel_arr,&sp);
-    free(sp.pixel_arr);
+    size_t row, col,col_temp;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < LEVEL_WIDTH; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+               //Draw 'S'
+               makeChar(sp,'S',row,col,col,WHITE); 
 
-    makeChar(&sp,'P',SCREEN_WIDTH/2-80 + CHAR_WIDTH,SCREEN_HEIGHT/2-110);
-    placeSprite(g->pixel_arr,&sp);
-    free(sp.pixel_arr);
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                //Draw 'P'
+                makeChar(sp,'P',row,col,col_temp,WHITE); 
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               col_temp = col - letter3_col;
+               //Draw 'A'
+               makeChar(sp,'A',row,col,col_temp,WHITE); 
 
-    makeChar(&sp,'A',SCREEN_WIDTH/2-75 + 2*CHAR_WIDTH, SCREEN_HEIGHT/2-110);
-    placeSprite(g->pixel_arr,&sp);
-    free(sp.pixel_arr);
-
-    makeChar(&sp,'C',SCREEN_WIDTH/2-65 + 3*CHAR_WIDTH, SCREEN_HEIGHT/2-110);
-    placeSprite(g->pixel_arr,&sp);
-    free(sp.pixel_arr);
-
-    makeChar(&sp,'E',SCREEN_WIDTH/2-55 + 4*CHAR_WIDTH, SCREEN_HEIGHT/2-110);
-    placeSprite(g->pixel_arr,&sp);
-    free(sp.pixel_arr);
-
-    makeChar(&sp,'P',SCREEN_WIDTH/2, SCREEN_HEIGHT/2+60);
-    placeSprite(g->pixel_arr,&sp);
-    free(sp.pixel_arr);
-
+            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
+                col_temp = col - letter4_col;
+                //Draw 'C'
+                makeChar(sp,'C',row,col,col_temp,WHITE);
+            } else if (col < letter5_col+CHAR_WIDTH && col > letter5_col) {
+                col_temp = col - letter5_col;
+                makeChar(sp,'E',row,col,col_temp,WHITE); 
+            }
+        }
+    }
 
 }
 
-void makeDeathScreenOne(GameScreen * g) {
+void makeASprite(Sprite*sp,size_t xPos, size_t yPos) {
+    sp->width = CHAR_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*sp->width*sizeof(int));
     
+    size_t row, col;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < sp->width; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            makeChar(sp,'A',row,col,col,RED); 
+        }
+    }
+}
+
+void makeBSprite(Sprite*sp,size_t xPos, size_t yPos) {
+    sp->width = CHAR_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*sp->width*sizeof(int));
+    
+    size_t row, col;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < sp->width; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            makeChar(sp,'B',row,col,col,RED); 
+        }
+    }
+}
+void makePlayer(Sprite*sp, size_t xPos, size_t yPos) {
+    
+    sp->width = LEVEL_WIDTH + CHAR_WIDTH + 10;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*sp->width*sizeof(int));
+    
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+    size_t letter6_col = letter5_col + CHAR_WIDTH + 10;
+
+    size_t row, col,col_temp;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < sp->width; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+               //Draw 'S'
+               makeChar(sp,'P',row,col,col,WHITE); 
+
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                //Draw 'P'
+                makeChar(sp,'L',row,col,col_temp,WHITE); 
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               col_temp = col - letter3_col;
+               //Draw 'A'
+               makeChar(sp,'A',row,col,col_temp,WHITE); 
+
+            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
+                col_temp = col - letter4_col;
+                //Draw 'C'
+                makeChar(sp,'Y',row,col,col_temp,WHITE);
+            } else if (col < letter5_col+CHAR_WIDTH && col > letter5_col) {
+                col_temp = col - letter5_col;
+                makeChar(sp,'E',row,col,col_temp,WHITE); 
+            } else if (col < letter6_col+CHAR_WIDTH && col > letter6_col) {
+                col_temp = col - letter6_col;
+                makeChar(sp,'R',row,col,col_temp,WHITE);
+            }
+        }
+    }
+
+}
+
+void makeLevel(Sprite* sp, size_t xPos, size_t yPos) {
+    
+    sp->width = LEVEL_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
+
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+
+    size_t row, col,col_temp;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < LEVEL_WIDTH; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+               //Draw 'L'
+                
+                makeChar(sp,'L',row,col,col,WHITE);
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                //Draw 'E'
+                makeChar(sp,'E',row,col,col_temp,WHITE);
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               col_temp = col - letter3_col;
+               //Draw 'V'
+               makeChar(sp,'V',row, col,col_temp,WHITE);
+
+            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
+                col_temp = col - letter4_col;
+                makeChar(sp,'E',row,col,col_temp,WHITE); 
+            } else if (col < letter5_col+CHAR_WIDTH && col > letter5_col) {
+                col_temp = col - letter5_col;
+                makeChar(sp,'L',row,col,col_temp,WHITE); 
+            }
+        }
+    }
+    
+}
+
+void makeScore(Sprite* sp, size_t xPos, size_t yPos) {
+    
+    sp->width = LEVEL_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
+
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+
+    size_t row, col,col_temp;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < LEVEL_WIDTH; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+
+            if (col < CHAR_WIDTH) {
+            
+                makeChar(sp,'S',row,col,col,WHITE);
+
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+               
+                col_temp = col - letter2_col;
+                makeChar(sp,'C',row,col,col_temp,WHITE); 
+
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               
+               col_temp = col - letter3_col;
+               makeChar(sp,'O',row,col,col_temp,WHITE); 
+
+            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
+                
+                col_temp = col - letter4_col;
+                makeChar(sp,'R',row,col,col_temp,WHITE);
+
+            } else if (col < letter5_col+CHAR_WIDTH && col > letter5_col) {
+                
+                col_temp = col - letter5_col;
+                makeChar(sp,'E',row,col,col_temp,WHITE);
+ 
+            }
+        }
+    }
+    
+
+}
+void makePress(Sprite* sp, size_t xPos, size_t yPos) {
+    
+    sp->width = LEVEL_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
+
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+
+    size_t row, col,col_temp;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < LEVEL_WIDTH; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+               //Draw 'P'
+                makeChar(sp,'P',row,col,col,WHITE);
+
+
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                //Draw 'R'
+                makeChar(sp,'R',row,col,col_temp,WHITE); 
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               col_temp = col - letter3_col;
+               //Draw 'E'
+               makeChar(sp,'E',row,col,col_temp,WHITE); 
+
+            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
+                //Draw 'S'
+                col_temp = col - letter4_col;
+                makeChar(sp,'S',row,col,col_temp,WHITE);
+
+            } else if (col < letter5_col+CHAR_WIDTH && col > letter5_col) {
+                col_temp = col - letter5_col;
+                makeChar(sp,'S',row,col,col_temp,WHITE);
+ 
+            }
+        }
+    }
+    
+}
+
+
+void makeStart(Sprite* sp, size_t xPos, size_t yPos, int color) {
+    
+    sp->width = LEVEL_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
+
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+
+    size_t row, col,col_temp,row_inv;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < LEVEL_WIDTH; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+               //Draw 'S'
+               makeChar(sp,'S',row,col,col,color); 
+
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                //Draw 'T'
+                makeChar(sp,'T',row,col,col_temp,color); 
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               col_temp = col - letter3_col;
+               //Draw 'A'
+               makeChar(sp,'A',row,col,col_temp,color);
+            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
+                //Draw 'R'
+                col_temp = col - letter4_col;
+                makeChar(sp,'R',row,col,col_temp,color); 
+            } else if (col < letter5_col+CHAR_WIDTH && col > letter5_col) {
+                //Draw 'T'
+                col_temp = col - letter5_col;
+                makeChar(sp,'T',row,col,col_temp,color);
+            }
+        }
+    }
+    
+}
+
+void makeToContinue(Sprite* sp, size_t xPos, size_t yPos) {
+    sp->width = LEVEL_WIDTH*2 + 15;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*sp->width*sizeof(int));
+    
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 25;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+    size_t letter6_col = letter5_col + CHAR_WIDTH + 10;
+    size_t letter7_col = letter6_col + CHAR_WIDTH + 10;
+    size_t letter8_col = letter7_col + CHAR_WIDTH + 10;
+    size_t letter9_col = letter8_col + CHAR_WIDTH + 10;
+    size_t letter10_col = letter9_col + CHAR_WIDTH + 10;
+    
+    size_t row, col,col_temp;
+
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < sp->width; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+               //Draw 'T'
+               makeChar(sp,'T',row,col,col,WHITE); 
+
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                //Draw 'O'
+               makeChar(sp,'O',row,col,col_temp,WHITE);                
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               col_temp = col - letter3_col;
+               //Draw 'C'
+               makeChar(sp,'C',row,col,col_temp,WHITE); 
+            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
+                //Draw 'O'
+               col_temp = col - letter4_col;
+               makeChar(sp,'O',row,col,col_temp,WHITE); 
+            } else if (col < letter5_col+CHAR_WIDTH && col > letter5_col) {
+                //Draw 'N'
+               col_temp = col - letter5_col;
+               makeChar(sp,'N',row,col,col_temp,WHITE); 
+            } else if (col < letter6_col + CHAR_WIDTH && col > letter6_col) {
+                col_temp = col - letter6_col;
+                //Draw 'T'
+                makeChar(sp,'T',row,col,col_temp,WHITE);
+           } else if (col < letter7_col+CHAR_WIDTH && col > letter7_col) {
+               col_temp = col - letter7_col;
+               //Draw 'I'
+               makeChar(sp,'I',row,col,col_temp,WHITE); 
+            } else if (col < letter8_col+CHAR_WIDTH && col > letter8_col) {
+                //Draw 'N'
+                col_temp = col - letter8_col;
+                makeChar(sp,'N',row,col,col_temp,WHITE);
+            } else if (col < letter9_col+CHAR_WIDTH && col > letter9_col) {
+                //Draw 'U'
+                col_temp = col-letter9_col;
+                makeChar(sp,'U',row,col,col_temp,WHITE);
+            } else if (col < letter10_col+CHAR_WIDTH && col > letter10_col) {
+                //Draw 'E'
+                col_temp = col-letter10_col;
+                makeChar(sp,'E',row,col,col_temp,WHITE);
+            }
+        }
+    }
+}
+
+void makeYou(Sprite* sp, size_t xPos, size_t yPos, int color) {
+    
+    sp->width = LEVEL_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
+
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+
+    size_t row, col,col_temp,row_inv;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < LEVEL_WIDTH; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+               makeChar(sp,'Y',row,col,col,color); 
+
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                makeChar(sp,'O',row,col,col_temp,color); 
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               col_temp = col - letter3_col;
+               makeChar(sp,'U',row,col,col_temp,color);
+            }         
+      }
+    }
+    
+}
+
+
+void makeWin(Sprite* sp, size_t xPos, size_t yPos, int color) {
+    
+    sp->width = LEVEL_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
+
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH-CHAR_THICK;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+
+    size_t row, col,col_temp,row_inv;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < LEVEL_WIDTH; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+               makeChar(sp,'V',row,col,col,color); 
+
+            } if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                makeChar(sp,'V',row,col,col_temp,color); 
+            }
+            else if (col < letter3_col + CHAR_WIDTH && col > letter3_col) {
+                col_temp = col - letter3_col;
+                makeChar(sp,'I',row,col,col_temp,color); 
+            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
+               col_temp = col - letter4_col;
+               makeChar(sp,'N',row,col,col_temp,color);
+            }         
+      }
+    }
+    
+}
+
+void makeLose(Sprite* sp, size_t xPos, size_t yPos, int color) {
+    
+    sp->width = LEVEL_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
+
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+
+    size_t row, col,col_temp,row_inv;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < LEVEL_WIDTH; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+               //Draw 'S'
+               makeChar(sp,'L',row,col,col,color); 
+
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                //Draw 'T'
+                makeChar(sp,'O',row,col,col_temp,color); 
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               col_temp = col - letter3_col;
+               //Draw 'A'
+               makeChar(sp,'S',row,col,col_temp,color);
+            } else if (col < letter4_col+CHAR_WIDTH && col > letter4_col) {
+                //Draw 'R'
+                col_temp = col - letter4_col;
+                makeChar(sp,'E',row,col,col_temp,color); 
+            }         }
+    }
+    
+}
+
+void makeTie(Sprite* sp, size_t xPos, size_t yPos, int color) {
+    
+    sp->width = LEVEL_WIDTH;
+    sp->height = LEVEL_HEIGHT;
+    sp->x_pos = xPos;
+    sp->y_pos = yPos;
+    sp->pixel_arr = (int*) malloc(LEVEL_HEIGHT*LEVEL_WIDTH*sizeof(int));
+
+    size_t letter1_col = 0;
+    size_t letter2_col = CHAR_WIDTH + 10;
+    size_t letter3_col = letter2_col + CHAR_WIDTH + 10;
+    size_t letter4_col = letter3_col + CHAR_WIDTH + 10;
+    size_t letter5_col = letter4_col + CHAR_WIDTH + 10;
+
+    size_t row, col,col_temp,row_inv;
+    for (row = 0; row < LEVEL_HEIGHT; row ++) {
+        for (col = 0; col < LEVEL_WIDTH; col++) {
+            setPixelAt(col,row,sp,BACKGROUND);
+            if (col < CHAR_WIDTH) {
+               //Draw 'S'
+               makeChar(sp,'T',row,col,col,color); 
+
+            } else if (col < letter2_col + CHAR_WIDTH && col > letter2_col) {
+                col_temp = col - letter2_col;
+                //Draw 'T'
+                makeChar(sp,'I',row,col,col_temp,color); 
+            } else if (col < letter3_col+CHAR_WIDTH && col > letter3_col) {
+               col_temp = col - letter3_col;
+               //Draw 'A'
+               makeChar(sp,'E',row,col,col_temp,color);
+            }      
+         }
+    }
+    
+}
+///////////////////////////////
+//// Updating Screen //////////
+///////////////////////////////
+void makeStartScreen(GameScreen* g, int color) {
+    size_t title_xPos, title_yPos, pick_xPos, pick1_yPos, pick2_yPos;
+
+    title_xPos = SCREEN_WIDTH/2-200;
+    title_yPos = SCREEN_HEIGHT/2 - 100;
+    pick_xPos = SCREEN_WIDTH/2-250;
+    pick1_yPos = SCREEN_HEIGHT/2 + 150;
+    pick2_yPos = pick1_yPos + 50 + CHAR_HEIGHT + 25;
+
+    Sprite sp;
+    makeRightArrow(&sp,title_xPos,title_yPos,color);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+    
+    makeSpace(&sp,title_xPos+ARROW_HEIGHT_WIDTH+10,title_yPos + 20);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeASprite(&sp,pick_xPos,pick1_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeDigit(&sp,1,pick_xPos+CHAR_WIDTH+15, pick1_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeHyphen(&sp,pick_xPos+CHAR_WIDTH*2 +10,pick1_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makePlayer(&sp,pick_xPos+CHAR_WIDTH*3+20, pick1_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+    
+    makeBSprite(&sp,pick_xPos,pick2_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeDigit(&sp,2,pick_xPos+CHAR_WIDTH+15, pick2_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeHyphen(&sp,pick_xPos+CHAR_WIDTH*2 +10,pick2_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makePlayer(&sp,pick_xPos+CHAR_WIDTH*3+20, pick2_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+}
+
+void makeDeathScreenOne(GameScreen * g) {
+    size_t continue_xPos,continue_yPos, score_xPos,score_yPos;
+    
+    score_xPos = SCREEN_WIDTH/2 - LEVEL_WIDTH;
+    score_yPos = 300;
+    continue_xPos = 230;
+    continue_yPos = SCREEN_HEIGHT/2 + 100;
+
+    Sprite sp,sp1;
+    
+    makeScore(&sp,score_xPos, score_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeNum(&sp,&sp1,g->level,score_xPos+ LEVEL_WIDTH +25,score_yPos);
+    if (g->level > 9) { placeSprite(g->pixel_arr,&sp); free(sp.pixel_arr);}
+    placeSprite(g->pixel_arr,&sp1);
+    free(sp1.pixel_arr);
+
+    makePress(&sp,continue_xPos,continue_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeStart(&sp,continue_xPos + LEVEL_WIDTH+10,continue_yPos, RED);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeToContinue(&sp, continue_xPos + 2*(LEVEL_WIDTH+10),continue_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+}
+
+void makeDeathScreenTwo(GameScreen * g) {
+    size_t xPos, yPos,lose_xPos,win_xPos, continue_xPos, continue_yPos;
+    xPos = 200;
+    yPos = 400;
+    continue_xPos = xPos - 50;
+    continue_yPos = 800;
+    
+    Sprite sp;
+    sp.pixel_arr = g->pixel_arr;
+    sp.height = SCREEN_HEIGHT;
+    sp.width = SCREEN_WIDTH;
+    size_t i;
+    
+    for (i = 0; i < SCREEN_HEIGHT; i++) {
+        setPixelAt(SCREEN_WIDTH/2,i,&sp,WHITE);    
+    }
+
+    if (g->winner != 0) {
+        makeYou(&sp,xPos, yPos,WHITE);
+        placeSprite(g->pixel_arr,&sp);
+        free(sp.pixel_arr);
+
+        makeYou(&sp,SCREEN_WIDTH/2 + xPos,yPos,WHITE);
+        placeSprite(g->pixel_arr,&sp);
+        free(sp.pixel_arr);
+
+        if (g->winner == 1) {
+            win_xPos = xPos;
+            lose_xPos = xPos + SCREEN_WIDTH/2;
+            
+        } else {
+            lose_xPos = xPos;
+            win_xPos = xPos + SCREEN_WIDTH/2;
+            lose_xPos = xPos; 
+        }
+
+        makeLose(&sp,lose_xPos,yPos+LEVEL_HEIGHT+20,RED);
+        placeSprite(g->pixel_arr,&sp);
+        free(sp.pixel_arr);
+        
+        makeWin(&sp,win_xPos,yPos+LEVEL_HEIGHT+20,GREEN);
+        placeSprite(g->pixel_arr,&sp);
+        free(sp.pixel_arr);
+ 
+    } else {
+
+        makeTie(&sp,xPos,yPos,BLUE);
+        placeSprite(g->pixel_arr,&sp);
+        free(sp.pixel_arr);
+        
+        makeTie(&sp,xPos+SCREEN_WIDTH/2,yPos,BLUE);
+        placeSprite(g->pixel_arr,&sp);
+        free(sp.pixel_arr);
+    }
+
+    makePress(&sp,continue_xPos,continue_yPos);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeStart(&sp,continue_xPos + LEVEL_WIDTH+10,continue_yPos, RED);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
+
+    makeToContinue(&sp, continue_xPos,continue_yPos + LEVEL_HEIGHT + 20);
+    placeSprite(g->pixel_arr,&sp);
+    free(sp.pixel_arr);
 
 }
 
